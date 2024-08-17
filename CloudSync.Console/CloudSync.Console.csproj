@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>PrimalZed.$(MSBuildProjectName.Replace(" ", "_").Replace(".Console", ""))</RootNamespace>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+		<EnableComHosting>True</EnableComHosting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Vanara.PInvoke.CldApi" Version="4.0.3" />
+    <PackageReference Include="Vanara.PInvoke.Ole" Version="4.0.3" />
+    <PackageReference Include="Vanara.PInvoke.Shell32" Version="4.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CloudSync.Common\CloudSync.Common.csproj" />
+    <ProjectReference Include="..\CloudSync.Remote.Abstractions\CloudSync.Remote.Abstractions.csproj" />
+    <ProjectReference Include="..\CloudSync.Remote.Local\CloudSync.Remote.Local.csproj" />
+    <ProjectReference Include="..\CloudSync.Shell\CloudSync.Shell.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

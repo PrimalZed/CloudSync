@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:desktop3="http://schemas.microsoft.com/appx/manifest/desktop/windows10/3"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:cloudfiles="http://schemas.microsoft.com/appx/manifest/cloudfiles/windows10"
+  xmlns:cloudfiles2="http://schemas.microsoft.com/appx/manifest/cloudfiles/windows10/2"
+  IgnorableNamespaces="uap rescap desktop3 cloudfiles cloudfiles2">
+
+  <Identity
+    Name="PrimalZed.CloundSync"
+    Publisher="CN=PrimalZed"
+    Version="1.0.1.0" />
+
+  <Properties>
+    <DisplayName>Cloud Sync</DisplayName>
+    <PublisherDisplayName>PrimalZed</PublisherDisplayName>
+    <Logo>Images\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.22621.0" MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="$targetentrypoint$">
+       <uap:VisualElements
+        DisplayName="Cloud Sync"
+        Description="Cloud Sync"
+        BackgroundColor="transparent"
+        Square150x150Logo="Images\Square150x150Logo.png"
+        Square44x44Logo="Images\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Images\SplashScreen.png" />
+      </uap:VisualElements> 
+      <Extensions>
+        <cloudfiles:Extension Category="windows.cloudFiles">
+          <cloudfiles:CloudFiles>
+						<cloudfiles:CustomStateHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+						<cloudfiles:ThumbnailProviderHandler Clsid="703e61b4-f4a4-4803-b824-9d23dad651bc"/>
+						<cloudfiles:ExtendedPropertyHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+						<cloudfiles:BannersHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+						<cloudfiles:CloudFilesContextMenus>
+              <cloudfiles:Verb Id="Test" Clsid="4a3c9b56-f075-4499-b4ee-ba4b88d1fe05"/>
+            </cloudfiles:CloudFilesContextMenus>
+						<cloudfiles:ContentUriSource Clsid="20000000-0000-0000-0000-000000000001"/>
+            <cloudfiles2:StorageProviderStatusUISourceFactory Clsid="d3252227-1396-40a5-bfe9-1fcc49333ab3"/>
+          </cloudfiles:CloudFiles>
+        </cloudfiles:Extension>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer DisplayName="CloudSync Local Thumbnail Provider Handler" Executable="CloudSync\CloudSync.exe">
+              <com:Class Id="703e61b4-f4a4-4803-b824-9d23dad651bc" />
+            </com:ExeServer>
+            <com:ExeServer DisplayName="CloudSync Test Context Menu Command Handler" Executable="CloudSync\CloudSync.exe">
+              <com:Class Id="4a3c9b56-f075-4499-b4ee-ba4b88d1fe05" />
+            </com:ExeServer>
+            <com:ExeServer DisplayName="CloudSync Local Status UI Source Factory" Executable="CloudSync\CloudSync.exe">
+              <com:Class Id="d3252227-1396-40a5-bfe9-1fcc49333ab3" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
