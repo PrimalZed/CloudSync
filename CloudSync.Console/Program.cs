@@ -38,6 +38,7 @@ builder.Services
 	.AddSingleton<RemoteWatcherFactory>()
 
 	// Shell
+	.AddCommonClassObjects()
 	.AddLocalClassObjects()
 	.AddSingleton<ShellRegistrar>()
 	.AddHostedService<SyncBackgroundService>();
