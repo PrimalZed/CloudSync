@@ -6,7 +6,6 @@ using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.IO;
 using PrimalZed.CloudSync.Shell;
-using Vanara.PInvoke;
 
 namespace PrimalZed.CloudSync;
 public sealed class SyncBackgroundService(
@@ -40,28 +39,30 @@ public sealed class SyncBackgroundService(
 
 
 		// Hook up callback methods (in this class) for transferring files between client and server
-		using (var connectionKey = new Disposable<CldApi.CF_CONNECTION_KEY>(syncProvider.Connect(stoppingToken), syncProvider.Disconnect)) {
-			// Create the placeholders in the client folder so the user sees something
-			// TODO: Only on install
-			if (_clientOptions.PopulationPolicy == PopulationPolicy.AlwaysFull) {
-				placeholdersService.CreateBulk(string.Empty);
-			}
+		using var providerCancellation = new CancellationTokenSource();
+		_ = Task.Run(() => syncProvider.ConnectAndRun(providerCancellation.Token), providerCancellation.Token);
 
-			// TODO: Sync changes since last time this service ran
-
-			// Stage 2: Running
-			//--------------------------------------------------------------------------------------------
-			// The file watcher loop for this sample will run until the user presses Ctrl-C.
-			// The file watcher will look for any changes on the files in the client (syncroot) in order
-			// to let the cloud know.
-			using var clientWatcher = clientWatcherFactory.CreateAndStart();
-			using var serverWatcher = remoteWatcherFactory.CreateAndStart(stoppingToken);
-
-			// Run until SIGTERM
-			await stoppingToken;
-
-			logger.LogInformation("Disconnecting and Unregistering...");
+		// Create the placeholders in the client folder so the user sees something
+		// TODO: Only on install
+		if (_clientOptions.PopulationPolicy == PopulationPolicy.AlwaysFull) {
+			placeholdersService.CreateBulk(string.Empty);
 		}
+
+		// TODO: Sync changes since last time this service ran
+
+		// Stage 2: Running
+		//--------------------------------------------------------------------------------------------
+		// The file watcher loop for this sample will run until the user presses Ctrl-C.
+		// The file watcher will look for any changes on the files in the client (syncroot) in order
+		// to let the cloud know.
+		using var clientWatcher = clientWatcherFactory.CreateAndStart();
+		using var serverWatcher = remoteWatcherFactory.CreateAndStart(stoppingToken);
+
+		// Run until SIGTERM
+		await stoppingToken;
+
+		logger.LogInformation("Disconnecting and Unregistering...");
+		providerCancellation.Cancel();
 
 		// TODO: Only on uninstall (or not at all?)
 		placeholdersService.DeleteBulk(_clientOptions.Directory);

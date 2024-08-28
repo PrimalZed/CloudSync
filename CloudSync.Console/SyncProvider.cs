@@ -6,12 +6,12 @@ using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using System.Threading.Channels;
 using Vanara.PInvoke;
+using static Vanara.PInvoke.CldApi;
 
 namespace PrimalZed.CloudSync;
-
 public record Callback {
-	public required CldApi.CF_CALLBACK_TYPE Type { get; init; }
-	public required CldApi.CF_CALLBACK_INFO Info { get; init; }
+	public required CF_CALLBACK_TYPE Type { get; init; }
+	public required CF_CALLBACK_INFO Info { get; init; }
 	public CallbackParameters Parameters { get; init; } = new CallbackParameters();
 }
 public record CallbackParameters {}
@@ -32,38 +32,45 @@ public sealed class SyncProvider(
 		);
 	private readonly CancellationTokenSource _disposeTokenSource = new ();
 
-	public CldApi.CF_CONNECTION_KEY Connect(CancellationToken stoppingToken = default) {
+	public async Task ConnectAndRun(CancellationToken stoppingToken = default) {
+		using var disposable = new Disposable<CF_CONNECTION_KEY>(Connect(stoppingToken), Disconnect);
+
+		try {
+			await ProcessQueueAsync(stoppingToken);
+		}
+		catch (TaskCanceledException) {}
+	}
+
+	public CF_CONNECTION_KEY Connect(CancellationToken stoppingToken = default) {
 		logger.LogDebug("Connecting sync provider to {syncRootPath}", _clientOptions.Directory);
 		CloudFilter.ConnectSyncRoot(
 			_clientOptions.Directory,
 			new SyncRootEvents {
 				FetchPlaceholders = FetchPlaceholders,
-				FetchData = (in CldApi.CF_CALLBACK_INFO callbackInfo, in CldApi.CF_CALLBACK_PARAMETERS callbackParameters) =>
+				FetchData = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) =>
 					FetchData(callbackInfo, callbackParameters),
-				CancelFetchData = CancelFetchData,
 				OnCloseCompletion = OnCloseCompletion,
-				OnRenameCompletion = (in CldApi.CF_CALLBACK_INFO callbackInfo, in CldApi.CF_CALLBACK_PARAMETERS callbackParameters) => 
+				OnRenameCompletion = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) => 
 					_channel.Writer.WriteAsync(new Callback {
-						Type = CldApi.CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION,
+						Type = CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION,
 						Info = callbackInfo,
 						Parameters = new RenameCompletionCallbackParameters {
 							SourcePath = callbackParameters.RenameCompletion.SourcePath,
 						},
 					}),
-				OnDeleteCompletion = (in CldApi.CF_CALLBACK_INFO callbackInfo, in CldApi.CF_CALLBACK_PARAMETERS callbackParameters) =>
+				OnDeleteCompletion = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) =>
 					_channel.Writer.WriteAsync(new Callback {
-						Type = CldApi.CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION,
+						Type = CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION,
 						Info = callbackInfo,
 					}),
 			},
 			out var connectionKey
 		);
 
-		Task.Run(() => ProcessQueueAsync(stoppingToken), stoppingToken);
 		return connectionKey;
 	}
 
-	public void Disconnect(CldApi.CF_CONNECTION_KEY connectionKey) {
+	public void Disconnect(CF_CONNECTION_KEY connectionKey) {
 		logger.LogDebug("Disconnecting sync provider {syncRootPath}", _clientOptions.Directory);
 		CloudFilter.DisconnectSyncRoot(connectionKey);
 	}
@@ -73,15 +80,15 @@ public sealed class SyncProvider(
 		while (!cancellationToken.IsCancellationRequested) {
 			var e = await _channel.Reader.ReadAsync(cancellationToken);
 			var task = e.Type switch {
-				CldApi.CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION => OnRenameCompletion(e.Info, e.Parameters),
-				CldApi.CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION => OnDeleteCompletion(e.Info),
+				CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION => OnRenameCompletion(e.Info, e.Parameters),
+				CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION => OnDeleteCompletion(e.Info),
 				_ => throw new NotImplementedException(),
 			};
 			await task;
 		}
 	}
 
-	private void FetchPlaceholders(in CldApi.CF_CALLBACK_INFO callbackInfo, in CldApi.CF_CALLBACK_PARAMETERS callbackParameters) {
+	private void FetchPlaceholders(in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) {
 		logger.LogDebug("Fetch Placeholders '{path}' '{pattern}'", callbackInfo.NormalizedPath, callbackParameters.FetchPlaceholders.Pattern);
 		var clientDirectory = Path.Join(callbackInfo.VolumeDosName, callbackInfo.NormalizedPath[1..]);
 		var relativeDirectory = PathMapper.GetRelativePath(clientDirectory, _clientOptions.Directory);
@@ -92,7 +99,7 @@ public sealed class SyncProvider(
 		CloudFilter.TransferPlaceholders(callbackInfo, fileSystemInfos);
 	}
 
-	private async void FetchData(CldApi.CF_CALLBACK_INFO callbackInfo, CldApi.CF_CALLBACK_PARAMETERS callbackParameters) {
+	private async void FetchData(CF_CALLBACK_INFO callbackInfo, CF_CALLBACK_PARAMETERS callbackParameters) {
 		logger.LogDebug(
 			"Fetch data, {file}, fileSize: {fileSize}, offset: {offset}, total: {total}",
 			callbackInfo.NormalizedPath,
@@ -137,15 +144,11 @@ public sealed class SyncProvider(
 		}
 	}
 
-	private void CancelFetchData(in CldApi.CF_CALLBACK_INFO callbackInfo, in CldApi.CF_CALLBACK_PARAMETERS callbackParameters) {
-		logger.LogDebug("Cancel Fetch");
-	}
-
-	private void OnCloseCompletion(in CldApi.CF_CALLBACK_INFO callbackInfo, in CldApi.CF_CALLBACK_PARAMETERS callbackParameters) {
+	private void OnCloseCompletion(in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) {
 		logger.LogDebug("SyncRoot CloseCompletion {path} {flags}", callbackInfo.NormalizedPath, callbackParameters.CloseCompletion.Flags);
 	}
 
-	private async Task OnRenameCompletion(CldApi.CF_CALLBACK_INFO callbackInfo, CallbackParameters callbackParameters) {
+	private async Task OnRenameCompletion(CF_CALLBACK_INFO callbackInfo, CallbackParameters callbackParameters) {
 		if (callbackParameters is not RenameCompletionCallbackParameters renameCompletionParameters) {
 			throw new ArgumentException($"Unexpected parameters type {callbackParameters.GetType()}", nameof(callbackParameters));
 		}
@@ -179,7 +182,7 @@ public sealed class SyncProvider(
 		}
 	}
 
-	private async Task OnDeleteCompletion(CldApi.CF_CALLBACK_INFO callbackInfo) {
+	private async Task OnDeleteCompletion(CF_CALLBACK_INFO callbackInfo) {
 		logger.LogDebug("SyncRoot Delete {path}", callbackInfo.NormalizedPath);
 		var clientPath = Path.Join(callbackInfo.VolumeDosName, callbackInfo.NormalizedPath[1..]);
 		// For files created in client, sometimes it's not actually deleted yet. Wait until it's really gone.
