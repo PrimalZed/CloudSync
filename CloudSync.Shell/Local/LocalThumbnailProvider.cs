@@ -24,7 +24,6 @@ public class LocalThumbnailProvider(
 			// We want to identify the original item in the source folder that we're mirroring, based on the placeholder item that we
 			// get initialized with. There's probably a way to do this based on the file identity blob but this just uses path manipulation.
 			var clientPath = _clientItem.GetDisplayName(SIGDN.SIGDN_FILESYSPATH);
-			logger.LogDebug("Thumbnail requested for {path}", clientPath);
 			if (!clientPath.StartsWith(clientOptions.Value.Directory)) {
 				return HRESULT.E_UNEXPECTED;
 			}
