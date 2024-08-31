@@ -11,6 +11,7 @@ using PrimalZed.CloudSync.Shell.DependencyInjection;
 using PrimalZed.CloudSync.Shell;
 
 var builder = Host.CreateApplicationBuilder(args);
+builder.Logging.AddEventLog(options => options.SourceName = builder.Configuration.GetValue<string>("Logging:EventLog:SourceName"));
 builder.Services
 	.AddOptionsWithValidateOnStart<ClientOptions>()
 	.Configure<IConfiguration>((options, config) => {
@@ -41,11 +42,10 @@ builder.Services
 	.AddCommonClassObjects()
 	.AddLocalClassObjects()
 	.AddSingleton<ShellRegistrar>()
-	.AddHostedService<SyncBackgroundService>();
+
+	.AddHostedService<Worker>();
 var host = builder.Build();
 
 var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
 await host.RunAsync();
-
-logger.LogInformation("Stopped");

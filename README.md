@@ -77,6 +77,13 @@ Other options?
   etag (hash) would be better, but would need to maintain state
 [] Queue changes until closed
 [] Convert to https://github.com/microsoft/CsWin32?
+[] Manager and windows service?
+  [] "Manager" UI app to view, add, remove sync roots and backing services
+  [] Persisted data?
+  [] Windows service
+    [] Shell? How to integrate with MSIX registration - does there need to be only one shell registration for all sync roots?
+    [] Restart crashed sync roots?
+    [] Each sync root as separate service?
 
 ## SyncProvider / ClientWatcher
 [] Cancel FetchData/FetchPlaceholders
