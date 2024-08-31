@@ -9,6 +9,7 @@ using PrimalZed.CloudSync.IO;
 using PrimalZed.CloudSync.Remote.Local;
 using PrimalZed.CloudSync.Shell.DependencyInjection;
 using PrimalZed.CloudSync.Shell;
+using PrimalZed.CloudSync.Logging;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Logging.AddEventLog(options => options.SourceName = builder.Configuration.GetValue<string>("Logging:EventLog:SourceName"));
@@ -24,6 +25,7 @@ builder.Services
 		options.Directory = @"C:\SyncTestServer";
 	})
 	.Services
+	.AddSingleton<EventLogRegistrar>()
 	.AddSingleton<IRemoteInfo, LocalRemoteInfo>()
 	.AddSingleton<IRemoteReadWriteService, LocalRemoteReadWriteService>()
 	.AddSingleton<IRemoteReadService>((sp) => sp.GetRequiredService<IRemoteReadWriteService>())
@@ -43,9 +45,9 @@ builder.Services
 	.AddLocalClassObjects()
 	.AddSingleton<ShellRegistrar>()
 
-	.AddHostedService<Worker>();
+	//.AddHostedService<Worker>()
+	.AddHostedService<TestWorker>()
+	.AddWindowsService();
 var host = builder.Build();
-
-var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
 await host.RunAsync();

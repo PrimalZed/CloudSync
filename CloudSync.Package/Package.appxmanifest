@@ -12,7 +12,7 @@
   IgnorableNamespaces="uap rescap desktop3 desktop6 cloudfiles cloudfiles2">
 
   <Identity
-    Name="PrimalZed.CloundSync"
+    Name="com.primalzed.cloudsync"
     Publisher="CN=PrimalZed"
     Version="1.0.1.0" />
 
@@ -56,9 +56,9 @@
 						<Task Type="systemEvent"/>
 					</BackgroundTasks>
 				</Extension>-->
-				<!--<desktop6:Extension Category="windows.service" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Console\CloudSync.Console.exe">
+				<desktop6:Extension Category="windows.service" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Console.exe">
 					<desktop6:Service Name="CloudSync" StartAccount="localService" StartupType="auto"/>
-				</desktop6:Extension>-->
+				</desktop6:Extension>
         <!--<cloudfiles:Extension Category="windows.cloudFiles">
           <cloudfiles:CloudFiles>
 						<cloudfiles:CustomStateHandler Clsid="20000000-0000-0000-0000-000000000001"/>
