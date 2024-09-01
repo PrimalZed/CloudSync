@@ -11,6 +11,11 @@ namespace PrimalZed.CloudSync.DependencyInjection;
 public static class ServiceCollectionExtensions {
 	public static IServiceCollection AddCloudSyncWorker(this IServiceCollection services) =>
 		services
+			.AddOptionsWithValidateOnStart<ProviderOptions>()
+			.Configure<IConfiguration>((options, config) => {
+				options.ProviderId = "PrimalZed:CloudSync";
+			})
+			.Services
 			.AddOptionsWithValidateOnStart<ClientOptions>()
 			.Configure<IConfiguration>((options, config) => {
 				options.Directory = @"C:\SyncTestClient";
@@ -22,13 +27,12 @@ public static class ServiceCollectionExtensions {
 				options.Directory = @"C:\SyncTestServer";
 			})
 			.Services
-			.AddSingleton<IRemoteInfo, LocalRemoteInfo>()
 			.AddSingleton<IRemoteReadWriteService, LocalRemoteReadWriteService>()
 			.AddSingleton<IRemoteReadService>((sp) => sp.GetRequiredService<IRemoteReadWriteService>())
 			.AddTransient<IRemoteWatcher, LocalRemoteWatcher>()
 			.AddSingleton<PlaceholdersService>()
 			.AddSingleton<SyncProvider>()
-			.AddSingleton<SyncRootRegistrar>()
+			.AddSingleton<SyncRootReader>()
 			.AddTransient<ClientWatcher>()
 			.AddSingleton<CreateClientWatcher>((sp) => () => sp.GetRequiredService<ClientWatcher>())
 			.AddSingleton<ClientWatcherFactory>()

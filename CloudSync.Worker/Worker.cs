@@ -11,7 +11,7 @@ namespace PrimalZed.CloudSync;
 public sealed class Worker(
 	IOptions<ClientOptions> clientOptions,
 	ShellRegistrar shellRegistrar,
-	SyncRootRegistrar rootRegistrar,
+	SyncRootReader rootReader,
 	SyncProvider syncProvider,
 	PlaceholdersService placeholdersService,
 	ClientWatcherFactory clientWatcherFactory,
@@ -32,10 +32,10 @@ public sealed class Worker(
 		// Start up the task that registers and hosts the services for the shell (such as custom states, menus, etc)
 		using var disposableShellCookies = new Disposable<IReadOnlyList<uint>>(shellRegistrar.Register(), shellRegistrar.Revoke);
 
-		// Register the provider with the shell so that the Sync Root shows up in File Explorer
-		await rootRegistrar.RegisterAsync();
-		// TODO: Only on install
-		using var disposableRoot = new Disposable(rootRegistrar.Unregister);
+		if (!rootReader.IsRegistered()) {
+			logger.LogInformation("No sync roots registered");
+			return;
+		}
 
 
 		// Hook up callback methods (in this class) for transferring files between client and server

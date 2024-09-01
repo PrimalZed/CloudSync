@@ -2,20 +2,22 @@ using System.Security.Principal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PrimalZed.CloudSync.Configuration;
+using PrimalZed.CloudSync.Management.Abstractions;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using Windows.Security.Cryptography;
 using Windows.Storage;
 using Windows.Storage.Provider;
 
-namespace PrimalZed.CloudSync;
+namespace PrimalZed.CloudSync.Management;
 public class SyncRootRegistrar(
+	IOptions<ProviderOptions> providerOptions,
 	IOptions<ClientOptions> clientOptions,
 	IRemoteInfo remoteInfo,
 	ILogger<SyncRootRegistrar> logger
-) {
-	public const string PROVIDER_ID = "PrimalZed:CloudSync";
+) : ISyncRootRegistrar {
+	private readonly ProviderOptions _providerOptions = providerOptions.Value;
 	private readonly ClientOptions _clientOptions = clientOptions.Value;
-	public string Id => $"{PROVIDER_ID}!{WindowsIdentity.GetCurrent().User}!{remoteInfo.AccountId}";
+	public string Id => $"{_providerOptions.ProviderId}!{WindowsIdentity.GetCurrent().User}!{remoteInfo.AccountId}";
 
 	public async Task RegisterAsync() {
 		if (!StorageProviderSyncRootManager.IsSupported()) {
