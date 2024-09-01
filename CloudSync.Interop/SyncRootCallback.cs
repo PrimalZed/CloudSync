@@ -1,5 +1,5 @@
 
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public delegate void SyncRootCallback(in CldApi.CF_CALLBACK_INFO callbackInfo, in CldApi.CF_CALLBACK_PARAMETERS callbackParameters);

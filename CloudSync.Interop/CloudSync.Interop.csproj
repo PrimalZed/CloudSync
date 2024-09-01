@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>PrimalZed.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Vanara.PInvoke.CldApi" Version="4.0.3" />
+		<PackageReference Include="Vanara.PInvoke.Ole" Version="4.0.3" />
+		<PackageReference Include="Vanara.PInvoke.Shell32" Version="4.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\CloudSync.Common\CloudSync.Common.csproj" />
+	  <ProjectReference Include="..\CloudSync.Remote.Abstractions\CloudSync.Remote.Abstractions.csproj" />
+	</ItemGroup>
+
+</Project>

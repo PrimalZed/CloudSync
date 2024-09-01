@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PrimalZed.CloudSync.CldApiExt;
 using PrimalZed.CloudSync.Configuration;
+using PrimalZed.CloudSync.Interop;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using PrimalZed.CloudSync.Helpers;
 using Vanara.Extensions;

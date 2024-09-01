@@ -52,7 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CloudSync.App\CloudSync.App\CloudSync.App.csproj" />
-    <ProjectReference Include="..\CloudSync.Console\CloudSync.Console.csproj" />
+    <ProjectReference Include="..\CloudSync.Service\CloudSync.Service.csproj" />
     <ProjectReference Include="..\CloudSync.Shell\CloudSync.Shell.csproj" />
   </ItemGroup>
 

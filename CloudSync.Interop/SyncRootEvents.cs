@@ -1,4 +1,4 @@
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public record SyncRootEvents {
 	public SyncRootCallback? FetchData { get; init; }
 	public SyncRootCallback? CancelFetchData { get; init; }

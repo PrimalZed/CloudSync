@@ -5,13 +5,11 @@ using PrimalZed.CloudSync.Async;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.IO;
-using PrimalZed.CloudSync.Logging;
 using PrimalZed.CloudSync.Shell;
 
 namespace PrimalZed.CloudSync;
-internal class Worker(
+public sealed class Worker(
 	IOptions<ClientOptions> clientOptions,
-	EventLogRegistrar eventLogRegistrar,
 	ShellRegistrar shellRegistrar,
 	SyncRootRegistrar rootRegistrar,
 	SyncProvider syncProvider,
@@ -25,7 +23,6 @@ internal class Worker(
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 		logger.LogInformation("Registering and Connecting...");
-		eventLogRegistrar.Register();
 		// Stage 1: Setup
 		//--------------------------------------------------------------------------------------------
 		// The client folder (syncroot) must be indexed in order for states to properly display

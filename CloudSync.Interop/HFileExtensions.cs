@@ -1,7 +1,7 @@
-using PrimalZed.CloudSync.Exceptions;
+using PrimalZed.CloudSync.Interop.Exceptions;
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public static class HFileExtensions {
 	public static SafeMetaHFILE ToMeta(this Kernel32.SafeHFILE fileHandle) => new SafeMetaHFILE.Kernel32HFILE(fileHandle);
 	public static SafeMetaHFILE ToMeta(this SafeOplockHFILE fileHandle) => new SafeMetaHFILE.OplockHFILE(fileHandle);

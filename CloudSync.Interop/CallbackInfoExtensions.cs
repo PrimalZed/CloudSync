@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public static class CallbackInfoExtensions {
 	public static CldApi.CF_OPERATION_INFO ToOperationInfo(this CldApi.CF_CALLBACK_INFO callbackInfo, CldApi.CF_OPERATION_TYPE operationType) =>
 		 new() {

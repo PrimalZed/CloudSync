@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public static class HResultExtensions {
 	public static void MyThrowIfFailed(this HRESULT hresult, string? message = null) {
 		Exception? exception = MyGetException(hresult, message);

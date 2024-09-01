@@ -1,6 +1,6 @@
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public abstract class SafeMetaHFILE : IDisposable {
 	public abstract HFILE FileHandle { get; }
 	public static implicit operator HFILE(SafeMetaHFILE h) => h.FileHandle;

@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>PrimalZed.$(MSBuildProjectName.Replace(" ", "_").Replace(".Worker", ""))</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CloudSync.Common\CloudSync.Common.csproj" />
+    <ProjectReference Include="..\CloudSync.Interop\CloudSync.Interop.csproj" />
+    <ProjectReference Include="..\CloudSync.Remote.Abstractions\CloudSync.Remote.Abstractions.csproj" />
+    <ProjectReference Include="..\CloudSync.Remote.Local\CloudSync.Remote.Local.csproj" />
+    <ProjectReference Include="..\CloudSync.Shell\CloudSync.Shell.csproj" />
+  </ItemGroup>
+
+</Project>

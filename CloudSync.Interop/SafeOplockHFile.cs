@@ -1,6 +1,6 @@
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public class SafeOplockHFILE : IDisposable {
 	private bool _isDisposed = false;
 	private readonly CldApi.SafeHCFFILE _hcffile;

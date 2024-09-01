@@ -1,6 +1,6 @@
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public static class SyncRootEventsExtensions {
 	private static (SyncRootCallback? Callback, CldApi.CF_CALLBACK_TYPE Type)[] ToPairs(this SyncRootEvents source) =>
 		[

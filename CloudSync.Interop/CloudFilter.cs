@@ -5,7 +5,7 @@ using Vanara.Extensions;
 using Vanara.InteropServices;
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public static class CloudFilter {
 	public static void ConnectSyncRoot(
 		string syncRootPath,

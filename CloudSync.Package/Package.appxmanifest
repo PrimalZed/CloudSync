@@ -56,7 +56,7 @@
 						<Task Type="systemEvent"/>
 					</BackgroundTasks>
 				</Extension>-->
-				<desktop6:Extension Category="windows.service" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Console.exe">
+				<desktop6:Extension Category="windows.service" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Service.exe">
 					<desktop6:Service Name="CloudSync" StartAccount="localService" StartupType="auto"/>
 				</desktop6:Extension>
         <!--<cloudfiles:Extension Category="windows.cloudFiles">

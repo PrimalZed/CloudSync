@@ -3,7 +3,7 @@ using Vanara.Extensions;
 using Vanara.InteropServices;
 using Vanara.PInvoke;
 
-namespace PrimalZed.CloudSync.CldApiExt;
+namespace PrimalZed.CloudSync.Interop;
 public sealed class SafeCreateInfo : IDisposable {
 	private readonly SafeCoTaskMemString _relativePathPointer;
 	public CldApi.CF_PLACEHOLDER_CREATE_INFO CreateInfo { get; init; }
