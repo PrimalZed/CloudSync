@@ -7,14 +7,14 @@ namespace PrimalZed.CloudSync.Logging {
 		private const string EVENTLOG_LOGNAME = "Application";
 
 		public void Register() {
-			logger.LogInformation("Create event log source if it does not already exist");
+			logger.LogDebug("Create event log source if it does not already exist");
 			if (!EventLog.SourceExists(EVENTLOG_SOURCE)) {
 				EventLog.CreateEventSource(EVENTLOG_SOURCE, EVENTLOG_LOGNAME);
 			}
 		}
 
 		public void Unregister() {
-			logger.LogInformation("Remove event log source if it exists");
+			logger.LogDebug("Remove event log source if it exists");
 			if (EventLog.SourceExists(EVENTLOG_SOURCE)) {
 				EventLog.DeleteEventSource(EVENTLOG_SOURCE);
 			}

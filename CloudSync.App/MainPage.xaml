@@ -39,6 +39,7 @@
                         Command="{ Binding UnregisterCommand }"
 				        HorizontalOptions="Fill"
                  IsVisible="{ Binding IsRegistered }"/>
+            <Label Text="{Binding Error}" />
         </VerticalStackLayout>
     </ScrollView>
 

@@ -75,7 +75,7 @@ public sealed class SyncProvider(
 		CloudFilter.DisconnectSyncRoot(connectionKey);
 	}
 		
-	private async Task ProcessQueueAsync(CancellationToken stoppingToken = default) {
+	public async Task ProcessQueueAsync(CancellationToken stoppingToken = default) {
 		var cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, _disposeTokenSource.Token).Token;
 		while (!cancellationToken.IsCancellationRequested) {
 			var e = await _channel.Reader.ReadAsync(cancellationToken);

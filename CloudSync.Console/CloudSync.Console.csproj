@@ -4,12 +4,14 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>PrimalZed.$(MSBuildProjectName.Replace(" ", "_").Replace(".Console", ""))</RootNamespace>
     <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+	  <Platforms>x64;x86</Platforms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-		<EnableComHosting>True</EnableComHosting>
+    <EnableComHosting>True</EnableComHosting>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CloudSync.Management\CloudSync.Management.csproj" />
     <ProjectReference Include="..\CloudSync.Worker\CloudSync.Worker.csproj" />
   </ItemGroup>
 

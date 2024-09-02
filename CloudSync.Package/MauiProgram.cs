@@ -14,24 +14,22 @@ public static class MauiProgram
     var builder = MauiApp.CreateBuilder();
     builder.Services
       .AddOptionsWithValidateOnStart<ProviderOptions>()
-      .Configure<IConfiguration>((options, config) =>
-      {
+      .Configure<IConfiguration>((options, config) => {
         options.ProviderId = "PrimalZed:CloudSync";
       })
       .Services
       .AddOptionsWithValidateOnStart<ClientOptions>()
-      .Configure<IConfiguration>((options, config) =>
-      {
+      .Configure<IConfiguration>((options, config) => {
         options.Directory = @"C:\SyncTestClient";
       })
       .Services
       .AddOptionsWithValidateOnStart<LocalRemoteOptions>()
-      .Configure((options) =>
-      {
+      .Configure((options) => {
         options.AccountId = "TestAccount1";
         options.Directory = @"C:\SyncTestServer";
       })
       .Services
+      .AddSingleton<IServiceController, ServiceController>()
       .AddSingleton<IRemoteInfo, LocalRemoteInfo>()
       .AddSingleton<ISyncRootRegistrar, SyncRootRegistrar>();
 

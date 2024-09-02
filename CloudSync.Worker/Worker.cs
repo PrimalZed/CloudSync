@@ -6,6 +6,7 @@ using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.IO;
 using PrimalZed.CloudSync.Shell;
+using static Vanara.PInvoke.CldApi;
 
 namespace PrimalZed.CloudSync;
 public sealed class Worker(
@@ -32,15 +33,18 @@ public sealed class Worker(
 		// Start up the task that registers and hosts the services for the shell (such as custom states, menus, etc)
 		using var disposableShellCookies = new Disposable<IReadOnlyList<uint>>(shellRegistrar.Register(), shellRegistrar.Revoke);
 
-		if (!rootReader.IsRegistered()) {
+		if (!await rootReader.IsRegistered()) {
 			logger.LogInformation("No sync roots registered");
+			applicationLifetime.StopApplication();
 			return;
 		}
 
 
 		// Hook up callback methods (in this class) for transferring files between client and server
 		using var providerCancellation = new CancellationTokenSource();
-		_ = Task.Run(() => syncProvider.ConnectAndRun(providerCancellation.Token), providerCancellation.Token);
+		using var providerDisposable = new Disposable(providerCancellation.Cancel);
+		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(providerCancellation.Token), syncProvider.Disconnect);
+		_ = Task.Run(() => syncProvider.ProcessQueueAsync(providerCancellation.Token));
 
 		// Create the placeholders in the client folder so the user sees something
 		// TODO: Only on install
@@ -64,8 +68,8 @@ public sealed class Worker(
 		logger.LogInformation("Disconnecting and Unregistering...");
 		providerCancellation.Cancel();
 
-		// TODO: Only on uninstall (or not at all?)
-		placeholdersService.DeleteBulk(_clientOptions.Directory);
+		//// TODO: Only on uninstall (or not at all?)
+		//placeholdersService.DeleteBulk(_clientOptions.Directory);
 
 		applicationLifetime.StopApplication();
 	}

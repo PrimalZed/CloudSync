@@ -2,6 +2,6 @@
 public interface ISyncRootRegistrar {
 	string Id { get; }
 	Task RegisterAsync();
-	bool IsRegistered();
-	void Unregister();
+	Task<bool> IsRegistered();
+	Task Unregister();
 }

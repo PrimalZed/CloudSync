@@ -43,8 +43,5 @@ public static class ServiceCollectionExtensions {
 			// Shell
 			.AddCommonClassObjects()
 			.AddLocalClassObjects()
-			.AddSingleton<ShellRegistrar>()
-
-			//.AddHostedService<Worker>()
-			.AddHostedService<TestWorker>();
+			.AddSingleton<ShellRegistrar>();
 }
