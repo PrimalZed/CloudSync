@@ -12,7 +12,9 @@ builder.Services
 	.AddCloudSyncWorker()
 	.AddSingleton<EventLogRegistrar>()
 
-  .AddHostedService<Worker>()
+	.AddHostedService<SyncProviderWorker>()
+	.AddHostedService<PipeWorker>()
+  .AddHostedService<ShellWorker>()
 	//.AddHostedService<TestWorker>();
 	// TODO: Register EventLog source: needs admin?
 	.AddWindowsService();

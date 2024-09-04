@@ -1,8 +1,8 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
-namespace PrimalZed.CloudSync.Management.Abstractions;
+namespace PrimalZed.CloudSync.Commands;
 [StructLayout(LayoutKind.Sequential)]
-public struct RegisterSyncRootRequest {
+public struct UnregisterSyncRootCommand {
 	[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 50)]
 	public string AccountId;
 	[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 500)]

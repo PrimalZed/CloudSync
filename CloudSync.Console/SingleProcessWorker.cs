@@ -5,7 +5,7 @@ using PrimalZed.CloudSync.Management.Abstractions;
 namespace PrimalZed.CloudSync;
 public class SingleProcessWorker(
   ISyncRootRegistrar rootRegistrar,
-  Worker innerWorker
+  ShellWorker innerWorker
 ) : BackgroundService {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
     await rootRegistrar.RegisterAsync();

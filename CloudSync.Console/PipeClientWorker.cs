@@ -6,11 +6,11 @@ namespace PrimalZed.CloudSync;
 public class PipeClientWorker(ILogger<PipeClientWorker> logger) : BackgroundService {
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 		await Task.Delay(500, stoppingToken);
-		using var pipeClient = new PipeClient(PipeNames.SYNC_ROOT_REGISTRAR);
+		using var pipeClient = new PipeClient(PipeNames.TEST);
 		pipeClient.ReceivedMessage += PipeClient_ReceivedMessage;
 
 		while (!stoppingToken.IsCancellationRequested) {
-			await pipeClient.SendMessage("Hello from client");
+			await pipeClient.SendMessage("Hello from client", stoppingToken);
 			await Task.Delay(3000, stoppingToken);
 		}
 	}

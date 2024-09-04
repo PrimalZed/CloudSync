@@ -32,19 +32,10 @@ public sealed class SyncProvider(
 		);
 	private readonly CancellationTokenSource _disposeTokenSource = new ();
 
-	public async Task ConnectAndRun(CancellationToken stoppingToken = default) {
-		using var disposable = new Disposable<CF_CONNECTION_KEY>(Connect(stoppingToken), Disconnect);
-
-		try {
-			await ProcessQueueAsync(stoppingToken);
-		}
-		catch (TaskCanceledException) {}
-	}
-
-	public CF_CONNECTION_KEY Connect(CancellationToken stoppingToken = default) {
-		logger.LogDebug("Connecting sync provider to {syncRootPath}", _clientOptions.Directory);
+	public CF_CONNECTION_KEY Connect(string directory, CancellationToken stoppingToken = default) {
+		logger.LogDebug("Connecting sync provider to {syncRootPath}", directory);
 		CloudFilter.ConnectSyncRoot(
-			_clientOptions.Directory,
+			directory,
 			new SyncRootEvents {
 				FetchPlaceholders = FetchPlaceholders,
 				FetchData = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) =>

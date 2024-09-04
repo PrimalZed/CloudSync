@@ -31,10 +31,10 @@ public static class MauiProgram
         options.Directory = @"C:\SyncTestServer";
       })
       .Services
-      .AddKeyedSingleton<IPipe>("registrar", (sp, key) => new PipeClient(PipeNames.SYNC_ROOT_REGISTRAR))
+      .AddKeyedSingleton("registrar", (Func<IServiceProvider, object?, IPipe>)((sp, key) => new PipeClient(PipeNames.SYNC_ROOT_REGISTRAR)))
       .AddSingleton<IServiceController, ServiceController>()
       .AddSingleton<IRemoteInfo, LocalRemoteInfo>()
-      .AddSingleton<ISyncRootRegistrar, SyncRootRegistrar>();
+      .AddSingleton<ISyncRootRegistrar, Management.SyncRootRegistrar>();
 
     builder
       .UseSharedMauiApp();

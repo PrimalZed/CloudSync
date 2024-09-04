@@ -24,6 +24,7 @@
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Maui" Version="9.0.3" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.82" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.82" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
@@ -31,6 +32,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\CloudSync.Common.Abstractions\CloudSync.Common.Abstractions.csproj" />
+	  <ProjectReference Include="..\CloudSync.Common\CloudSync.Common.csproj" />
 	  <ProjectReference Include="..\CloudSync.Management.Abstractions\CloudSync.Management.Abstractions.csproj" />
 	</ItemGroup>
 

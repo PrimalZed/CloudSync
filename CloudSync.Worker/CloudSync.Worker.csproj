@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CloudSync.Common\CloudSync.Common.csproj" />
     <ProjectReference Include="..\CloudSync.Interop\CloudSync.Interop.csproj" />
+    <ProjectReference Include="..\CloudSync.Management.Abstractions\CloudSync.Management.Abstractions.csproj" />
     <ProjectReference Include="..\CloudSync.Remote.Abstractions\CloudSync.Remote.Abstractions.csproj" />
     <ProjectReference Include="..\CloudSync.Remote.Local\CloudSync.Remote.Local.csproj" />
     <ProjectReference Include="..\CloudSync.Shell\CloudSync.Shell.csproj" />
