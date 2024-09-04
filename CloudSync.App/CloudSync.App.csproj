@@ -30,6 +30,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\CloudSync.Common.Abstractions\CloudSync.Common.Abstractions.csproj" />
 	  <ProjectReference Include="..\CloudSync.Management.Abstractions\CloudSync.Management.Abstractions.csproj" />
 	</ItemGroup>
 

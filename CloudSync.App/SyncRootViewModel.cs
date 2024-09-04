@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Management.Abstractions;
 
 namespace CloudSync.App;

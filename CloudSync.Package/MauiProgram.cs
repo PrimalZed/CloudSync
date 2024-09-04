@@ -1,8 +1,10 @@
 ﻿using CloudSync.App;
 using Microsoft.Extensions.Configuration;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Management;
 using PrimalZed.CloudSync.Management.Abstractions;
+using PrimalZed.CloudSync.Pipes;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using PrimalZed.CloudSync.Remote.Local;
 
@@ -29,6 +31,7 @@ public static class MauiProgram
         options.Directory = @"C:\SyncTestServer";
       })
       .Services
+      .AddKeyedSingleton<IPipe>("registrar", (sp, key) => new PipeClient(PipeNames.SYNC_ROOT_REGISTRAR))
       .AddSingleton<IServiceController, ServiceController>()
       .AddSingleton<IRemoteInfo, LocalRemoteInfo>()
       .AddSingleton<ISyncRootRegistrar, SyncRootRegistrar>();

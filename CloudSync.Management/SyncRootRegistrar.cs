@@ -1,7 +1,9 @@
 using System.Security.Principal;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Win32;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Interop;
 using PrimalZed.CloudSync.Management.Abstractions;
@@ -16,6 +18,7 @@ public class SyncRootRegistrar(
 	IOptions<ProviderOptions> providerOptions,
 	IOptions<ClientOptions> clientOptions,
 	IRemoteInfo remoteInfo,
+	[FromKeyedServices("registrar")] IPipe registrarPipe,
 	ILogger<SyncRootRegistrar> logger
 ) : ISyncRootRegistrar {
 	private readonly ProviderOptions _providerOptions = providerOptions.Value;
@@ -28,29 +31,35 @@ public class SyncRootRegistrar(
 		}
 		if (await IsRegistered()) {
 			logger.LogWarning("Unexpectedly already registered {syncRootId}", Id);
-			Unregister();
+			await Unregister();
 		}
-		var info = new StorageProviderSyncRootInfo {
-			Id = Id,
-			ProviderId = new Guid("85950cf5-1dcf-4584-a73c-dca302abf58d"),
-			Path = await StorageFolder.GetFolderFromPathAsync(_clientOptions.Directory),
-			DisplayNameResource = $"PrimalZed CloudSync - {remoteInfo.AccountId}",
-			IconResource = @"%SystemRoot%\system32\charmap.exe,0",
-			HydrationPolicy = StorageProviderHydrationPolicy.Partial,
-			HydrationPolicyModifier = StorageProviderHydrationPolicyModifier.AutoDehydrationAllowed,
-			PopulationPolicy = (StorageProviderPopulationPolicy)_clientOptions.PopulationPolicy,
-			// InSyncPolicy = StorageProviderInSyncPolicy.Default, // StorageProviderInSyncPolicy.FileCreationTime | StorageProviderInSyncPolicy.DirectoryCreationTime;
-			ShowSiblingsAsGroup = false,
-			// TODO: Get version from package (but also don't crash on debug)
-			Version = "1.0.0",
-			// HardlinkPolicy = StorageProviderHardlinkPolicy.None,
-			// RecycleBinUri = new Uri(""),
-			Context = CryptographicBuffer.ConvertStringToBinary(remoteInfo.Identity, BinaryStringEncoding.Utf8),
+		var request = new RegisterSyncRootRequest {
+			AccountId = remoteInfo.AccountId,
+			Directory = _clientOptions.Directory,
 		};
-		// rootInfo.StorageProviderItemPropertyDefinitions.Add()
+		var requestBytes = StructBytes.ToBytes(request);
+		var requestBase64 = Convert.ToBase64String(requestBytes);
+		await registrarPipe.SendMessage(requestBase64);
+		//var info = new StorageProviderSyncRootInfo {
+		//	Id = Id,
+		//	Path = await StorageFolder.GetFolderFromPathAsync(_clientOptions.Directory),
+		//	DisplayNameResource = $"PrimalZed CloudSync - {remoteInfo.AccountId}",
+		//	IconResource = @"%SystemRoot%\system32\charmap.exe,0",
+		//	HydrationPolicy = StorageProviderHydrationPolicy.Partial,
+		//	HydrationPolicyModifier = StorageProviderHydrationPolicyModifier.AutoDehydrationAllowed,
+		//	PopulationPolicy = (StorageProviderPopulationPolicy)_clientOptions.PopulationPolicy,
+		//	// InSyncPolicy = StorageProviderInSyncPolicy.Default, // StorageProviderInSyncPolicy.FileCreationTime | StorageProviderInSyncPolicy.DirectoryCreationTime;
+		//	ShowSiblingsAsGroup = false,
+		//	// TODO: Get version from package (but also don't crash on debug)
+		//	Version = "1.0.0",
+		//	// HardlinkPolicy = StorageProviderHardlinkPolicy.None,
+		//	// RecycleBinUri = new Uri(""),
+		//	Context = CryptographicBuffer.ConvertStringToBinary(remoteInfo.Identity, BinaryStringEncoding.Utf8),
+		//};
+		//// rootInfo.StorageProviderItemPropertyDefinitions.Add()
 
-		logger.LogDebug("Registering {syncRootId}", Id);
-		StorageProviderSyncRootManager.Register(info);
+		//logger.LogDebug("Registering {syncRootId}", Id);
+		//StorageProviderSyncRootManager.Register(info);
 	}
 
 	public async Task<bool> IsRegistered() {

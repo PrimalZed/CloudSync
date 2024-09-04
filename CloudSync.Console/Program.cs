@@ -12,9 +12,10 @@ builder.Services
 	.AddCloudSyncWorker()
 	.AddSingleton<IRemoteInfo, LocalRemoteInfo>()
 	.AddSingleton<ISyncRootRegistrar, SyncRootRegistrar>()
-  //.AddSingleton<Worker>()
-  //.AddHostedService<HolisticWorker>();
-  .AddHostedService<Worker>();
+	//.AddSingleton<Worker>()
+	//.AddHostedService<HolisticWorker>();
+	//.AddHostedService<PipeClientWorker>()
+	.AddHostedService<PipeServerWorker>();
 var host = builder.Build();
 
 await host.RunAsync();

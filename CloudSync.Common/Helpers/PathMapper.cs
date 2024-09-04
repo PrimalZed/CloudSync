@@ -15,4 +15,6 @@ public static class PathMapper {
 		}
 		Directory.CreateDirectory(directory);
 	}
+
+	public static string LocalApplicationDataPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PrimalZed", "CloudSync");
 }
