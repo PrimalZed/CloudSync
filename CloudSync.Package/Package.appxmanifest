@@ -57,7 +57,7 @@
 					</BackgroundTasks>
 				</Extension>-->
 				<desktop6:Extension Category="windows.service" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Service.exe">
-					<desktop6:Service Name="CloudSync" StartAccount="localService" StartupType="auto"/>
+					<desktop6:Service Name="CloudSync" StartAccount="localSystem" StartupType="auto"/>
 				</desktop6:Extension>
         <!--<cloudfiles:Extension Category="windows.cloudFiles">
           <cloudfiles:CloudFiles>
@@ -91,6 +91,7 @@
 	
   <Capabilities>
     <Capability Name="internetClient" />
+		<rescap:Capability Name="localSystemServices" />
 		<rescap:Capability Name="packagedServices" />
 		<rescap:Capability Name="runFullTrust" />
   </Capabilities>

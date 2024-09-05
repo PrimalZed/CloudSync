@@ -1,10 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Async;
+using PrimalZed.CloudSync.Commands;
 using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.IO;
 using static Vanara.PInvoke.CldApi;
-using Windows.Storage.Provider;
-using Windows.Storage;
 
 namespace PrimalZed.CloudSync;
 public class SyncProviderPool(
@@ -17,17 +16,17 @@ public class SyncProviderPool(
 	private readonly Dictionary<string, CancellableThread> _threads = [];
 	private bool _stopping = false;
 
-	public void Start(string syncRootPath) {
+	public void Start(RegisterSyncRootCommand command) {
 		if (_stopping) {
 			return;
 		}
-		var thread = new CancellableThread((CancellationToken cancellation) => Run(syncRootPath, cancellation), logger);
+		var thread = new CancellableThread((CancellationToken cancellation) => Run(command, cancellation), logger);
 		thread.Stopped += (object? sender, EventArgs e) => {
-			_threads.Remove(syncRootPath);
+			_threads.Remove(command.Directory);
 			(sender as CancellableThread)?.Dispose();
 		};
 		thread.Start();
-		_threads.Add(syncRootPath, thread);
+		_threads.Add(command.Directory, thread);
 	}
 
 	public async Task StopAll() {
@@ -44,19 +43,16 @@ public class SyncProviderPool(
 		await thread.Stop();
 	}
 
-	private async Task Run(string syncRootPath, CancellationToken cancellation) {
-		logger.LogInformation("Connecting...");
+	private async Task Run(RegisterSyncRootCommand command, CancellationToken cancellation) {
+		logger.LogDebug("Connecting...");
 		// Hook up callback methods (in this class) for transferring files between client and server
 		using var providerCancellation = new CancellationTokenSource();
 		using var providerDisposable = new Disposable(providerCancellation.Cancel);
-		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(syncRootPath, providerCancellation.Token), syncProvider.Disconnect);
+		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(command.Directory, providerCancellation.Token), syncProvider.Disconnect);
 		_ = Task.Run(() => syncProvider.ProcessQueueAsync(providerCancellation.Token));
 
 		// Create the placeholders in the client folder so the user sees something
-		var storageFolder = await StorageFolder.GetFolderFromPathAsync(syncRootPath);
-		var syncRootInfo = StorageProviderSyncRootManager.GetSyncRootInformationForFolder(storageFolder);
-		// TODO: Only on install
-		if (syncRootInfo.PopulationPolicy == StorageProviderPopulationPolicy.AlwaysFull) {
+		if (command.PopulationPolicy == PopulationPolicy.AlwaysFull) {
 			placeholdersService.CreateBulk(string.Empty);
 		}
 
@@ -73,11 +69,11 @@ public class SyncProviderPool(
 		// Run until SIGTERM
 		await cancellation;
 
-		logger.LogInformation("Disconnecting...");
+		logger.LogDebug("Disconnecting...");
 		providerCancellation.Cancel();
 
-		//// TODO: Only on uninstall (or not at all?)
-		//placeholdersService.DeleteBulk(_clientOptions.Directory);
+		// TODO: Only on uninstall (or not at all?)
+		placeholdersService.DeleteBulk(command.Directory);
 	}
 
 	private sealed class CancellableThread : IDisposable {

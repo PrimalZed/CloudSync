@@ -9,13 +9,13 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services
 	.AddCloudSyncWorker()
 	.AddSingleton<IRemoteInfo, LocalRemoteInfo>()
-	//.AddSingleton<Worker>()
-	//.AddHostedService<SingleProcessWorker>();
-	//.AddHostedService<PipeClientWorker>()
-	//.AddHostedService<PipeServerWorker>();
-	.AddHostedService<SyncProviderWorker>()
-	.AddHostedService<PipeWorker>();
-	//.AddHostedService<Worker>();
+	.AddHostedService<SingleProcessWorker>();
+
+//.AddHostedService<PipeClientWorker>()
+//.AddHostedService<PipeServerWorker>()
+
+//.AddHostedService<SyncProviderWorker>()
+//.AddHostedService<PipeWorker>();
 var host = builder.Build();
 
 await host.RunAsync();

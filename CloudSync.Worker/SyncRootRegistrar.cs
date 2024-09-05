@@ -17,33 +17,33 @@ public class SyncRootRegistrar(
 		return roots.Any((x) => x.Id.StartsWith(providerOptions.Value.ProviderId + "!"));
 	}
 
-	public async Task Register(RegisterSyncRootCommand request) {
+	public void Register(RegisterSyncRootCommand command, IStorageFolder directory) {
 		// Stage 1: Setup
 		//--------------------------------------------------------------------------------------------
 		// The client folder (syncroot) must be indexed in order for states to properly display
-		var clientDirectory = new DirectoryInfo(request.Directory);
+		var clientDirectory = new DirectoryInfo(command.Directory);
 		clientDirectory.Attributes &= ~System.IO.FileAttributes.NotContentIndexed;
 
-		var id = $"{providerOptions.Value.ProviderId}!{WindowsIdentity.GetCurrent().User}!{request.AccountId}";
+		var id = $"{providerOptions.Value.ProviderId}!{WindowsIdentity.GetCurrent().User}!{command.AccountId}";
 		if (IsRegistered()) {
 			logger.LogWarning("Unexpectedly already registered {syncRootId}", id);
-			Unregister(request.AccountId);
+			Unregister(command.AccountId);
 		}
 		var info = new StorageProviderSyncRootInfo {
 			Id = id,
-			Path = await StorageFolder.GetFolderFromPathAsync(request.Directory),
-			DisplayNameResource = $"PrimalZed CloudSync - {request.AccountId}",
+			Path = directory,
+			DisplayNameResource = $"PrimalZed CloudSync - {command.AccountId}",
 			IconResource = @"%SystemRoot%\system32\charmap.exe,0",
 			HydrationPolicy = StorageProviderHydrationPolicy.Partial,
 			HydrationPolicyModifier = StorageProviderHydrationPolicyModifier.AutoDehydrationAllowed,
-			PopulationPolicy = (StorageProviderPopulationPolicy)request.PopulationPolicy,
+			PopulationPolicy = (StorageProviderPopulationPolicy)command.PopulationPolicy,
 			// InSyncPolicy = StorageProviderInSyncPolicy.Default, // StorageProviderInSyncPolicy.FileCreationTime | StorageProviderInSyncPolicy.DirectoryCreationTime;
 			ShowSiblingsAsGroup = false,
 			// TODO: Get version from package (but also don't crash on debug)
 			Version = "1.0.0",
 			// HardlinkPolicy = StorageProviderHardlinkPolicy.None,
 			// RecycleBinUri = new Uri(""),
-			Context = CryptographicBuffer.ConvertStringToBinary($"Local directory {request.Directory}", BinaryStringEncoding.Utf8),
+			Context = CryptographicBuffer.ConvertStringToBinary($"Local directory {command.Directory}", BinaryStringEncoding.Utf8),
 		};
 		// rootInfo.StorageProviderItemPropertyDefinitions.Add()
 
@@ -53,9 +53,6 @@ public class SyncRootRegistrar(
 
 	public void Unregister(string accountId) {
 		var id = $"{providerOptions.Value.ProviderId}!{WindowsIdentity.GetCurrent().User}!{accountId}";
-		if (!IsRegistered()) {
-			return;
-		}
 		logger.LogDebug("Unregistering {syncRootId}", id);
 		StorageProviderSyncRootManager.Unregister(id);
 	}

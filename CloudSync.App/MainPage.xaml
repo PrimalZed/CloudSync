@@ -30,15 +30,13 @@
 				        Text="Register" 
 				        SemanticProperties.Hint="Unregisters the sync root"
                         Command="{ Binding RegisterCommand }"
-				        HorizontalOptions="Fill"
-                 IsVisible="{ Binding IsRegistered, Converter={StaticResource InvertedBoolConverter}}"/>
+				        HorizontalOptions="Fill"/>
             <Label Text="Sync Root Is Registered" Style="{StaticResource SubHeadline}" IsVisible="{ Binding IsRegistered }"/>
             <Button
 				        Text="Unregister" 
 				        SemanticProperties.Hint="Unregisters the sync root"
                         Command="{ Binding UnregisterCommand }"
-				        HorizontalOptions="Fill"
-                 IsVisible="{ Binding IsRegistered }"/>
+				        HorizontalOptions="Fill"/>
             <Label Text="{Binding Error}" />
         </VerticalStackLayout>
     </ScrollView>

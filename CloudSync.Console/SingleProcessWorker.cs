@@ -1,20 +1,26 @@
 ﻿using Microsoft.Extensions.Hosting;
-using PrimalZed.CloudSync.Helpers;
-using PrimalZed.CloudSync.Management.Abstractions;
+using PrimalZed.CloudSync.Async;
+using PrimalZed.CloudSync.Commands;
+using Windows.Storage;
 
 namespace PrimalZed.CloudSync;
 public class SingleProcessWorker(
-  ISyncRootRegistrar rootRegistrar,
-  ShellWorker innerWorker
+  SyncRootRegistrar syncRootRegistrar,
+	SyncProviderPool syncProviderPool
 ) : BackgroundService {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-    await rootRegistrar.RegisterAsync();
-    try {
-      await innerWorker.StartAsync(stoppingToken);
-      await innerWorker.ExecuteTask!;
-    }
-    finally {
-      await rootRegistrar.Unregister();
-    }
-  }
+		var registerCommand = new RegisterSyncRootCommand {
+			AccountId = "TestAccount1",
+			Directory = @"C:\SyncTestClient",
+			PopulationPolicy = PopulationPolicy.Full,
+		};
+		var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
+		syncRootRegistrar.Register(registerCommand, storageFolder);
+		syncProviderPool.Start(registerCommand);
+
+		await stoppingToken;
+
+		await syncProviderPool.Stop(registerCommand.Directory);
+		syncRootRegistrar.Unregister(registerCommand.AccountId);
+	}
 }

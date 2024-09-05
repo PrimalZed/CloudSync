@@ -8,7 +8,6 @@ using PrimalZed.CloudSync.Remote.Abstractions;
 using PrimalZed.CloudSync.Remote.Local;
 using PrimalZed.CloudSync.Shell;
 using PrimalZed.CloudSync.Shell.DependencyInjection;
-using System.Threading.Channels;
 
 namespace PrimalZed.CloudSync.DependencyInjection; 
 public static class ServiceCollectionExtensions {
