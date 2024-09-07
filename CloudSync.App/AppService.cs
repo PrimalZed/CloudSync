@@ -4,13 +4,15 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
 namespace CloudSync.App;
-public class AppService(Func<App> appFactory, ILogger<AppService> logger) : BackgroundService {
+public class AppService(IServiceProvider serviceProvider, ILogger<AppService> logger) : BackgroundService {
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 		Application.Start(_ => {
 			try {
 				var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
 				SynchronizationContext.SetSynchronizationContext(context);
-				var app = appFactory();
+				var app = new App {
+					ServiceProvider = serviceProvider,
+				};
 
 				app.UnhandledException += (object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e) => {
 					logger.LogCritical(e.Exception, "Unhandled exception");

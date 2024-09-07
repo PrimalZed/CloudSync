@@ -1,5 +1,6 @@
 ﻿using H.NotifyIcon;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -10,17 +11,23 @@ namespace CloudSync.App;
 /// Provides application-specific behavior to supplement the default Application class.
 /// </summary>
 public partial class App : Application {
-	private readonly Func<MainWindow> _mainWindowFactory;
-	private Window? m_window;
-	public bool Exiting { get; set; } = false;
-	public TaskbarIcon? TrayIcon { get; private set; }
+	/// <summary>
+	/// Gets the current <see cref="App"/> instance in use
+	/// </summary>
+	public new static App Current => (App)Application.Current;
+	/// <summary>
+	/// Gets the <see cref="IServiceProvider"/> instance to resolve application services.
+	/// </summary>
+	public required IServiceProvider ServiceProvider { get; init; }
+	public bool Exiting { get; private set; } = false;
+	private TaskbarIcon? taskbarIcon;
+	private Window? window;
 
 	/// <summary>
 	/// Initializes the singleton application object.  This is the first line of authored code
 	/// executed, and as such is the logical equivalent of main() or WinMain().
 	/// </summary>
-	public App(Func<MainWindow> mainWindowFactory) {
-		_mainWindowFactory = mainWindowFactory;
+	public App() {
 		InitializeComponent();
 	}
 
@@ -30,15 +37,19 @@ public partial class App : Application {
 	/// <param name="args">Details about the launch request and process.</param>
 	protected override void OnLaunched(LaunchActivatedEventArgs args) {
 		InitializeTrayIcon();
-		m_window = _mainWindowFactory();
-		m_window.Closed += (sender, args) => {
+		window = new Window {
+			Content = new Frame {
+				Content = new MainPage(),
+			},
+		};
+		window.Closed += (sender, args) => {
 			if (Exiting) {
 				return;
 			}
 			args.Handled = true;
-			m_window.AppWindow.Hide();
+			window.AppWindow.Hide();
 		};
-		m_window.Activate();
+		window.Activate();
 	}
 
 	private void InitializeTrayIcon() {
@@ -48,22 +59,22 @@ public partial class App : Application {
 		var exitApplicationCommand = (XamlUICommand)Resources["ExitApplicationCommand"];
 		exitApplicationCommand.ExecuteRequested += ExitApplicationCommand_ExecuteRequested;
 
-		TrayIcon = (TaskbarIcon)Resources["TrayIcon"];
-		TrayIcon.ForceCreate();
+		taskbarIcon = (TaskbarIcon)Resources["TrayIcon"];
+		taskbarIcon.TrayIcon.Create();
 	}
 
 	private void ShowHideWindowCommand_ExecuteRequested(object? _, ExecuteRequestedEventArgs args) {
-		if (m_window!.Visible) {
-			m_window.Hide();
+		if (window!.Visible) {
+			window.Hide();
 		}
 		else {
-			m_window.Show();
+			window.Show();
 		}
 	}
 
 	private void ExitApplicationCommand_ExecuteRequested(object? _, ExecuteRequestedEventArgs args) {
 		Exiting = true;
-		TrayIcon?.Dispose();
-		m_window!.Close();
+		taskbarIcon?.Dispose();
+		window!.Close();
 	}
 }

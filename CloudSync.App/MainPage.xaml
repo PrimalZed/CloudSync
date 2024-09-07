@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Page 
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:converters="using:CommunityToolkit.WinUI.Converters"
+	xmlns:local="using:CloudSync.App"
+	x:Class="CloudSync.App.MainPage">
+	<Page.Resources>
+		<converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+		<converters:BoolToObjectConverter x:Key="BoolToNotVisiblilityConverter" TrueValue="Collapsed" FalseValue="Visible"/>
+	</Page.Resources>
+	<StackPanel
+		Padding="30,0"
+		Spacing="25">
+
+		<TextBlock HorizontalAlignment="Stretch" HorizontalTextAlignment="Center">Hello, World!</TextBlock>
+
+		<TextBlock HorizontalAlignment="Stretch" HorizontalTextAlignment="Center">Welcome to .NET Multi-platform App UI</TextBlock>
+
+		<TextBlock
+			Visibility="{x:Bind DataContext.IsRegistered, Mode=OneWay, Converter={StaticResource BoolToNotVisiblilityConverter}}"
+			HorizontalAlignment="Stretch"
+			HorizontalTextAlignment="Center">
+			Sync Root Is Not Registered
+		</TextBlock>
+		<TextBlock
+			Visibility="{x:Bind DataContext.IsRegistered, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+			HorizontalAlignment="Stretch"
+			HorizontalTextAlignment="Center">
+			Sync Root Is Registered
+		</TextBlock>
+
+		<Button HorizontalAlignment="Stretch" Command="{x:Bind DataContext.RegisterCommand}">
+			Register
+		</Button>
+
+		<Button HorizontalAlignment="Stretch" Command="{x:Bind DataContext.UnregisterCommand}">
+			Unregister
+		</Button>
+		<TextBlock Text="{x:Bind DataContext.Error, Mode=OneWay}" HorizontalAlignment="Stretch" HorizontalTextAlignment="Center"/>
+	</StackPanel>
+</Page>
