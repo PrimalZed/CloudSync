@@ -50,6 +50,19 @@
 				<desktop:Extension Category="windows.startupTask" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Service.exe">
 					<desktop:StartupTask DisplayName="Cloud Sync" Enabled="true" TaskId="PrimalZed.CloudSync" rescap5:ImmediateRegistration="true" />
 				</desktop:Extension>
+				<cloudfiles:Extension Category="windows.cloudFiles">
+					<cloudfiles:CloudFiles>
+						<!--<cloudfiles:CustomStateHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+						<cloudfiles:ThumbnailProviderHandler Clsid="703e61b4-f4a4-4803-b824-9d23dad651bc"/>
+						<cloudfiles:ExtendedPropertyHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+						<cloudfiles:BannersHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+						<cloudfiles:CloudFilesContextMenus>
+							<cloudfiles:Verb Id="Test" Clsid="4a3c9b56-f075-4499-b4ee-ba4b88d1fe05"/>
+						</cloudfiles:CloudFilesContextMenus>
+						<cloudfiles:ContentUriSource Clsid="20000000-0000-0000-0000-000000000001"/>
+						<cloudfiles2:StorageProviderStatusUISourceFactory Clsid="d3252227-1396-40a5-bfe9-1fcc49333ab3"/>-->
+					</cloudfiles:CloudFiles>
+				</cloudfiles:Extension>
 			</Extensions>
 		</Application>
 	</Applications>
