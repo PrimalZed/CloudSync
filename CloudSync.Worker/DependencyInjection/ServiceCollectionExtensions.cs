@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.IO;
 using PrimalZed.CloudSync.Remote.Abstractions;
@@ -16,11 +17,6 @@ public static class ServiceCollectionExtensions {
 				options.ProviderId = "PrimalZed:CloudSync";
 			})
 			.Services
-			.AddOptionsWithValidateOnStart<ClientOptions>()
-			.Configure<IConfiguration>((options, config) => {
-				options.Directory = @"C:\SyncTestClient";
-			})
-			.Services
 			.AddOptionsWithValidateOnStart<LocalRemoteOptions>()
 			.Configure((options) => {
 				options.AccountId = "TestAccount1";
@@ -35,10 +31,14 @@ public static class ServiceCollectionExtensions {
 			.AddSingleton<SyncRootRegistrar>()
 			.AddSingleton<SyncProviderPool>()
 			.AddTransient<ClientWatcher>()
-			.AddSingleton<CreateClientWatcher>((sp) => () => sp.GetRequiredService<ClientWatcher>())
+			.AddSingleton<CreateClientWatcher>((sp) => (string rootDirectory) =>
+				new ClientWatcher(rootDirectory, sp.GetRequiredService<IRemoteReadWriteService>(), sp.GetRequiredService<ILogger<ClientWatcher>>())
+			)
 			.AddSingleton<ClientWatcherFactory>()
 			.AddTransient<RemoteWatcher>()
-			.AddSingleton<CreateRemoteWatcher>((sp) => () => sp.GetRequiredService<RemoteWatcher>())
+			.AddSingleton<CreateRemoteWatcher>((sp) => (string rootDirectory) =>
+				new RemoteWatcher(rootDirectory, sp.GetRequiredService<IRemoteReadService>(), sp.GetRequiredService<IRemoteWatcher>(), sp.GetRequiredService<PlaceholdersService>(), sp.GetRequiredService<ILogger<RemoteWatcher>>())
+			)
 			.AddSingleton<RemoteWatcherFactory>()
 
 			// Shell

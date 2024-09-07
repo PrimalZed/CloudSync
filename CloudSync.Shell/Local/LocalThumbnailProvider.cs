@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Remote.Local;
 using System.Runtime.InteropServices;
@@ -12,7 +11,6 @@ using static Vanara.PInvoke.Shell32;
 namespace PrimalZed.CloudSync.Shell.Local;
 [ComVisible(true), Guid("703e61b4-f4a4-4803-b824-9d23dad651bc")]
 public class LocalThumbnailProvider(
-	IOptions<ClientOptions> clientOptions,
 	IOptions<LocalRemoteOptions> localRemoteOptions,
 	ILogger<LocalThumbnailProvider> logger
 ) : IThumbnailProvider, IInitializeWithItem {
@@ -24,11 +22,12 @@ public class LocalThumbnailProvider(
 			// We want to identify the original item in the source folder that we're mirroring, based on the placeholder item that we
 			// get initialized with. There's probably a way to do this based on the file identity blob but this just uses path manipulation.
 			var clientPath = _clientItem.GetDisplayName(SIGDN.SIGDN_FILESYSPATH);
-			if (!clientPath.StartsWith(clientOptions.Value.Directory)) {
+			var rootDirectory = "TODO";
+			if (!clientPath.StartsWith(rootDirectory)) {
 				return HRESULT.E_UNEXPECTED;
 			}
 
-			var remotePath = PathMapper.ReplaceStart(clientPath, clientOptions.Value.Directory, localRemoteOptions.Value.Directory);
+			var remotePath = PathMapper.ReplaceStart(clientPath, rootDirectory, localRemoteOptions.Value.Directory);
 			_serverItem = SHCreateItemFromParsingName<IShellItem2>(remotePath);
 		}
 		catch (Exception ex) {

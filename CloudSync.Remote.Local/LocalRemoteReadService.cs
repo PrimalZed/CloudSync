@@ -1,17 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using PrimalZed.CloudSync.Helpers;
 
 namespace PrimalZed.CloudSync.Remote.Local;
 public class LocalRemoteReadService(
 	IOptions<LocalRemoteOptions> options,
-	IOptions<ClientOptions> clientOptions,
 	ILogger<LocalRemoteReadService> logger
 ) : IRemoteReadService {
 	protected readonly LocalRemoteOptions _options = options.Value;
-	protected readonly ClientOptions _clientOptions = clientOptions.Value;
 
 	public bool Exists(string relativePath) {
 		var serverPath = Path.Join(_options.Directory, relativePath);
@@ -51,18 +48,14 @@ public class LocalRemoteReadService(
 		return GetRemoteFileInfo(fileInfo);
 	}
 
-	public async Task<Stream> GetFileStream(string clientFile) {
-		var serverFile = GetRemotePath(clientFile);
+	public async Task<Stream> GetFileStream(string relativeFile) {
+		var serverFile = Path.Join(_options.Directory, relativeFile);
 		var fs = await FileHelper.WaitUntilUnlocked(() => File.OpenRead(serverFile), logger);
 		return fs;
 	}
 
 	internal string GetRelativePath(string serverPath) =>
 		PathMapper.GetRelativePath(serverPath, _options.Directory);
-	internal string GetClientPath(string serverPath) =>
-		PathMapper.ReplaceStart(serverPath, _options.Directory, _clientOptions.Directory);
-	internal string GetRemotePath(string clientPath) =>
-		PathMapper.ReplaceStart(clientPath, _clientOptions.Directory, _options.Directory);
 
 	private RemoteDirectoryInfo GetRemoteDirectoryInfo(DirectoryInfo directoryInfo) =>
 		new() {

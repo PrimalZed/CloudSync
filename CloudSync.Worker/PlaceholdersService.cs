@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Interop;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using PrimalZed.CloudSync.Helpers;
@@ -9,16 +7,14 @@ using Vanara.PInvoke;
 
 namespace PrimalZed.CloudSync;
 public class PlaceholdersService(
-	IOptions<ClientOptions> clientOptions,
 	IRemoteReadWriteService remoteService,
 	ILogger<PlaceholdersService> logger
 ) {
-	private readonly ClientOptions _clientOptions = clientOptions.Value;
 	private readonly ILogger _logger = logger;
 	private readonly FileEqualityComparer _fileComparer = new ();
 	private readonly DirectoryEqualityComparer _directoryComparer = new ();
 
-	public void CreateBulk(string subpath) {
+	public void CreateBulk(string rootDirectory, string subpath) {
 		using var filePlaceholderCreateInfos = remoteService.EnumerateFiles(subpath)
 			.Select(GetFilePlaceholderCreateInfo)
 			.ToDisposableArray();
@@ -38,7 +34,7 @@ public class PlaceholdersService(
 		}
 
 		CldApi.CfCreatePlaceholders(
-			Path.Join(_clientOptions.Directory, subpath),
+			Path.Join(rootDirectory, subpath),
 			placeholderCreateInfos,
 			Convert.ToUInt32(placeholderCreateInfos.Length),
 			CldApi.CF_CREATE_FLAGS.CF_CREATE_FLAG_NONE,
@@ -46,29 +42,29 @@ public class PlaceholdersService(
 		).ThrowIfFailed("Create placeholders failed");
 
 		foreach (var remoteSubDirectory in remoteSubDirectories) {
-			CreateBulk(remoteSubDirectory.RelativePath);
+			CreateBulk(rootDirectory, remoteSubDirectory.RelativePath);
 		}
 	}
 
-	public Task CreateOrUpdateFile(string relativeFile) {
-		var clientFile = Path.Join(_clientOptions.Directory, relativeFile);
+	public Task CreateOrUpdateFile(string rootDirectory, string relativeFile) {
+		var clientFile = Path.Join(rootDirectory, relativeFile);
 		return !File.Exists(clientFile)
-			? CreateFile(relativeFile)
-			: UpdateFile(relativeFile);
+			? CreateFile(rootDirectory, relativeFile)
+			: UpdateFile(rootDirectory, relativeFile);
 	}
 
-	public Task CreateOrUpdateDirectory(string relativeDirectory) {
-		var clientDirectory = Path.Join(_clientOptions.Directory, relativeDirectory);
+	public Task CreateOrUpdateDirectory(string rootDirectory, string relativeDirectory) {
+		var clientDirectory = Path.Join(rootDirectory, relativeDirectory);
 		return !Directory.Exists(clientDirectory)
-			? CreateDirectory(relativeDirectory)
-			: UpdateDirectory(relativeDirectory);
+			? CreateDirectory(rootDirectory, relativeDirectory)
+			: UpdateDirectory(rootDirectory, relativeDirectory);
 	}
 
-	public async Task CreateFile(string relativeFile) {
+	public async Task CreateFile(string rootDirectory, string relativeFile) {
 		var fileInfo = remoteService.GetFileInfo(relativeFile);
 		using var createInfo = new SafeCreateInfo(fileInfo, fileInfo.RelativePath);
 		CldApi.CfCreatePlaceholders(
-			Path.Join(_clientOptions.Directory, fileInfo.RelativeParentDirectory),
+			Path.Join(rootDirectory, fileInfo.RelativeParentDirectory),
 			[createInfo],
 			1u,
 			CldApi.CF_CREATE_FLAGS.CF_CREATE_FLAG_NONE,
@@ -76,11 +72,11 @@ public class PlaceholdersService(
 		).ThrowIfFailed("Create placeholder failed");
 	}
 
-	public async Task CreateDirectory(string relativeDirectory) {
+	public async Task CreateDirectory(string rootDirectory, string relativeDirectory) {
 		var directoryInfo = remoteService.GetDirectoryInfo(relativeDirectory);
 		using var createInfo = new SafeCreateInfo(directoryInfo, directoryInfo.RelativePath);
 		CldApi.CfCreatePlaceholders(
-			Path.Join(_clientOptions.Directory, directoryInfo.RelativeParentDirectory),
+			Path.Join(rootDirectory, directoryInfo.RelativeParentDirectory),
 			[createInfo],
 			1u,
 			CldApi.CF_CREATE_FLAGS.CF_CREATE_FLAG_NONE,
@@ -94,8 +90,8 @@ public class PlaceholdersService(
 	private SafeCreateInfo GetDirectoryPlaceholderCreateInfo(RemoteDirectoryInfo remoteDirectoryInfo) =>
 		new(remoteDirectoryInfo, remoteDirectoryInfo.RelativePath, onDemand: false);
 
-	public async Task UpdateFile(string relativeFile, bool force = false) {
-		var clientFile = Path.Join(_clientOptions.Directory, relativeFile);
+	public async Task UpdateFile(string rootDirectory, string relativeFile, bool force = false) {
+		var clientFile = Path.Join(rootDirectory, relativeFile);
 		if (!Path.Exists(clientFile)) {
 			_logger.LogDebug("Skip update; file does not exist {clientFile}", clientFile);
 			return;
@@ -127,7 +123,7 @@ public class PlaceholdersService(
 			CloudFilter.SetPinnedState(hfile, 0);
 		}
 		var redownload = downloaded && !clientFileInfo.Attributes.HasAnySyncFlag(SyncAttributes.UNPINNED);
-		var relativePath = PathMapper.GetRelativePath(clientFile, _clientOptions.Directory);
+		var relativePath = PathMapper.GetRelativePath(clientFile, rootDirectory);
 		var usn = downloaded
 			? CloudFilter.UpdateAndDehydratePlaceholder(hfile, relativePath, remoteFileInfo)
 			: CloudFilter.UpdateFilePlaceholder(hfile, relativePath, remoteFileInfo);
@@ -140,8 +136,8 @@ public class PlaceholdersService(
 		}
 	}
 
-	public Task UpdateDirectory(string relativeDirectory) {
-		var clientDirectory = Path.Join(_clientOptions.Directory, relativeDirectory);
+	public Task UpdateDirectory(string rootDirectory, string relativeDirectory) {
+		var clientDirectory = Path.Join(rootDirectory, relativeDirectory);
 		if (!Path.Exists(clientDirectory)) {
 			_logger.LogDebug("Skip update; directory does not exist {clientDirectory}", clientDirectory);
 			return Task.CompletedTask;
@@ -162,49 +158,50 @@ public class PlaceholdersService(
 
 		_logger.LogDebug("Update Directory Placeholder");
 		using var hfile = CloudFilter.CreateHFileWithOplock(clientDirectory, FileAccess.Write);
-		var relativePath = PathMapper.GetRelativePath(clientDirectory, _clientOptions.Directory);
+		var relativePath = PathMapper.GetRelativePath(clientDirectory, rootDirectory);
 		CloudFilter.UpdateDirectoryPlaceholder(hfile, remoteDirectoryInfo, relativePath);
 		return Task.CompletedTask;
 	}
 
-	public async Task RenameFile(string oldRelativeFile, string newRelativeFile) {
-		var oldClientFile = Path.Join(_clientOptions.Directory, oldRelativeFile);
+	public async Task RenameFile(string rootDirectory, string oldRelativeFile, string newRelativeFile) {
+		var oldClientFile = Path.Join(rootDirectory, oldRelativeFile);
 		if (!Path.Exists(oldClientFile) ) {
-			await CreateOrUpdateFile(newRelativeFile);
+			await CreateOrUpdateFile(rootDirectory, newRelativeFile);
 			return;
 		}
-		var newClientFile = Path.Join(_clientOptions.Directory, newRelativeFile);
+		var newClientFile = Path.Join(rootDirectory, newRelativeFile);
 		File.Move(oldClientFile, newClientFile);
 
 		CloudFilter.SetInSyncState(newClientFile);
 	}
 
-	public async Task RenameDirectory(string oldRelativePath, string newRelativePath) {
-		var oldClientDirectory = Path.Join(_clientOptions.Directory, oldRelativePath);
+	public async Task RenameDirectory(string rootDirectory, string oldRelativePath, string newRelativePath) {
+		var oldClientDirectory = Path.Join(rootDirectory, oldRelativePath);
 		if (!Path.Exists(oldClientDirectory)) {
-			await CreateOrUpdateDirectory(newRelativePath);
+			await CreateOrUpdateDirectory(rootDirectory, newRelativePath);
 			return;
 		}
-		var newClientDirectory = Path.Join(_clientOptions.Directory, newRelativePath);
+		var newClientDirectory = Path.Join(rootDirectory, newRelativePath);
 		Directory.Move(oldClientDirectory, newClientDirectory);
 
 		CloudFilter.SetInSyncState(newClientDirectory);
 	}
 
-	public void DeleteBulk(string relativeDirectory) {
-		var clientSubDirectories = Directory.EnumerateDirectories(relativeDirectory);
+	public void DeleteBulk(string rootDirectory, string relativeDirectory) {
+		var clientDirectory = Path.Join(rootDirectory, relativeDirectory);
+		var clientSubDirectories = Directory.EnumerateDirectories(clientDirectory);
 		foreach (var clientSubDirectory in clientSubDirectories) {
 			Directory.Delete(clientSubDirectory, recursive: true);
 		}
 
-		var clientFiles = Directory.EnumerateFiles(relativeDirectory);
+		var clientFiles = Directory.EnumerateFiles(clientDirectory);
 		foreach (var clientFile in clientFiles) {
 			File.Delete(clientFile);
 		}
 	}
 
-	public void Delete(string relativePath) {
-		var clientPath = Path.Join(_clientOptions.Directory, relativePath);
+	public void Delete(string rootDirectory, string relativePath) {
+		var clientPath = Path.Join(rootDirectory, relativePath);
 		if (!Path.Exists(clientPath)) {
 			return;
 		}

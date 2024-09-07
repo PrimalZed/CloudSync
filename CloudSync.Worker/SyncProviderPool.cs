@@ -16,20 +16,20 @@ public class SyncProviderPool(
 	private readonly Dictionary<string, CancellableThread> _threads = [];
 	private bool _stopping = false;
 
-	public void Start(string directory, StorageProviderPopulationPolicy populationPolicy) {
+	public void Start(string rootDirectory, StorageProviderPopulationPolicy populationPolicy) {
 		if (_stopping) {
 			return;
 		}
-		var thread = new CancellableThread((CancellationToken cancellation) => Run(directory, populationPolicy, cancellation), logger);
+		var thread = new CancellableThread((CancellationToken cancellation) => Run(rootDirectory, populationPolicy, cancellation), logger);
 		thread.Stopped += (object? sender, EventArgs e) => {
-			_threads.Remove(directory);
+			_threads.Remove(rootDirectory);
 			(sender as CancellableThread)?.Dispose();
 		};
 		thread.Start();
-		_threads.Add(directory, thread);
+		_threads.Add(rootDirectory, thread);
 	}
 
-	public bool Has(string directory) => _threads.ContainsKey(directory);
+	public bool Has(string rootDirectory) => _threads.ContainsKey(rootDirectory);
 
 	public async Task StopAll() {
 		_stopping = true;
@@ -38,24 +38,24 @@ public class SyncProviderPool(
 		await Task.WhenAll(stopTasks);
 	}
 
-	public async Task Stop(string syncRootPath) {
-		if (!_threads.TryGetValue(syncRootPath, out var thread)) {
+	public async Task Stop(string rootDirectory) {
+		if (!_threads.TryGetValue(rootDirectory, out var thread)) {
 			return;
 		}
 		await thread.Stop();
 	}
 
-	private async Task Run(string directory, StorageProviderPopulationPolicy populationPolicy, CancellationToken cancellation) {
+	private async Task Run(string rootDirectory, StorageProviderPopulationPolicy populationPolicy, CancellationToken cancellation) {
 		logger.LogDebug("Connecting...");
 		// Hook up callback methods (in this class) for transferring files between client and server
 		using var providerCancellation = new CancellationTokenSource();
 		using var providerDisposable = new Disposable(providerCancellation.Cancel);
-		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(directory, providerCancellation.Token), syncProvider.Disconnect);
+		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(rootDirectory, providerCancellation.Token), syncProvider.Disconnect);
 		_ = Task.Run(() => syncProvider.ProcessQueueAsync(providerCancellation.Token));
 
 		// Create the placeholders in the client folder so the user sees something
 		if (populationPolicy == StorageProviderPopulationPolicy.AlwaysFull) {
-			placeholdersService.CreateBulk(string.Empty);
+			placeholdersService.CreateBulk(rootDirectory, string.Empty);
 		}
 
 		// TODO: Sync changes since last time this service ran
@@ -65,8 +65,8 @@ public class SyncProviderPool(
 		// The file watcher loop for this sample will run until the user presses Ctrl-C.
 		// The file watcher will look for any changes on the files in the client (syncroot) in order
 		// to let the cloud know.
-		using var clientWatcher = clientWatcherFactory.CreateAndStart();
-		using var serverWatcher = remoteWatcherFactory.CreateAndStart(cancellation);
+		using var clientWatcher = clientWatcherFactory.CreateAndStart(rootDirectory);
+		using var serverWatcher = remoteWatcherFactory.CreateAndStart(rootDirectory, cancellation);
 
 		// Run until SIGTERM
 		await cancellation;

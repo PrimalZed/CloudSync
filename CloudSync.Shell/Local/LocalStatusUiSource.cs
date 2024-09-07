@@ -14,7 +14,7 @@ public class LocalStatusUiSource : IStorageProviderStatusUISource {
 		return new StorageProviderStatusUI {
 			ProviderState = StorageProviderState.InSync,
 			ProviderStateLabel = "This is all hard-coded info for testing",
-			ProviderStateIcon = new Uri(Path.Combine(Package.Current.InstalledPath, @"Images\StoreLogo.png")),
+			ProviderStateIcon = new Uri(Path.Join(Package.Current.InstalledPath, @"Images\StoreLogo.png")),
 			QuotaUI = new StorageProviderQuotaUI {
 				QuotaUsedColor = Color.FromArgb(a: 255, r: 200, g: 50, b: 255),
 				QuotaTotalInBytes = 5000000,

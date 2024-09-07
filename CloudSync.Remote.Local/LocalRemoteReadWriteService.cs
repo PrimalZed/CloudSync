@@ -2,19 +2,17 @@ using PrimalZed.CloudSync.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PrimalZed.CloudSync.Remote.Abstractions;
-using PrimalZed.CloudSync.Configuration;
 
 namespace PrimalZed.CloudSync.Remote.Local;
 public class LocalRemoteReadWriteService(
 	IOptions<LocalRemoteOptions> options,
-	IOptions<ClientOptions> clientOptions,
 	ILogger<LocalRemoteReadWriteService> logger
-) : LocalRemoteReadService(options, clientOptions, logger), IRemoteReadWriteService {
+) : LocalRemoteReadService(options, logger), IRemoteReadWriteService {
 	private readonly FileEqualityComparer _fileComparer = new ();
 	private readonly DirectoryEqualityComparer _directoryComparer = new ();
 
-	public async Task CreateFile(string clientFile) {
-		var serverFile = GetRemotePath(clientFile);
+	public async Task CreateFile(string rootDirectory, string clientFile) {
+		var serverFile = PathMapper.ReplaceStart(clientFile, rootDirectory, _options.Directory);
 
 		if (Path.Exists(serverFile)) {
 			throw new Exception("Conflict: already exists???");
@@ -30,8 +28,8 @@ public class LocalRemoteReadWriteService(
 		);
 	}
 
-	public async Task UpdateFile(string clientFile) {
-		var serverFile = GetRemotePath(clientFile);
+	public async Task UpdateFile(string rootDirectory, string clientFile) {
+		var serverFile = PathMapper.ReplaceStart(clientFile, rootDirectory, _options.Directory);
 		// Update only - CreateFile to create!
 		if (!Path.Exists(serverFile)) {
 			return;
@@ -63,8 +61,8 @@ public class LocalRemoteReadWriteService(
 		);
 	}
 
-	public Task CreateDirectory(string clientDirectory) {
-		var serverDirectory = GetRemotePath(clientDirectory);
+	public Task CreateDirectory(string rootDirectory, string clientDirectory) {
+		var serverDirectory = PathMapper.ReplaceStart(clientDirectory, rootDirectory, _options.Directory);
 		logger.LogDebug("Create Directory {directory}", serverDirectory);
 
 		if (Path.Exists(serverDirectory)) {
@@ -80,8 +78,8 @@ public class LocalRemoteReadWriteService(
 		return Task.CompletedTask;
 	}
 
-	public Task UpdateDirectory(string clientDirectory) {
-		var serverDirectory = GetRemotePath(clientDirectory);
+	public Task UpdateDirectory(string rootDirectory, string clientDirectory) {
+		var serverDirectory = PathMapper.ReplaceStart(clientDirectory, rootDirectory, _options.Directory);
 		logger.LogDebug("Update Directory {directory}", serverDirectory);
 
 		if (_directoryComparer.Equals(new DirectoryInfo(clientDirectory), new DirectoryInfo(serverDirectory))) {
@@ -98,29 +96,29 @@ public class LocalRemoteReadWriteService(
 		return Task.CompletedTask;
 	}
 
-	public void MoveFile(string oldClientFile, string newClientFile) {
-		var oldServerFile = GetRemotePath(oldClientFile);
-		var newServerFile = GetRemotePath(newClientFile);
+	public void MoveFile(string oldRelativeFile, string newRelativeFile) {
+		var oldServerFile = Path.Join(_options.Directory, oldRelativeFile);
+		var newServerFile = Path.Join(_options.Directory, newRelativeFile);
 		logger.LogDebug("Move File {old} -> {new}", oldServerFile, newServerFile);
 		File.Move(oldServerFile, newServerFile);
 	}
 
 	public void MoveDirectory(string oldClientDirectory, string newClientDirectory) {
-		var oldServerDirectory = GetRemotePath(oldClientDirectory);
-		var newServerDirectory = GetRemotePath(newClientDirectory);
+		var oldServerDirectory = Path.Join(_options.Directory, oldClientDirectory);
+		var newServerDirectory = Path.Join(_options.Directory, newClientDirectory);
 		logger.LogDebug("Move Directory {old} -> {new}", oldServerDirectory, newServerDirectory);
 		Directory.Move(oldServerDirectory, newServerDirectory);
 	}
 
 	public void DeleteFile(string clientFile) {
-		var serverFile = GetRemotePath(clientFile);
+		var serverFile = Path.Join(_options.Directory, clientFile);
 		logger.LogDebug("Delete File {file}", serverFile);
 		File.Delete(serverFile);
 		DeleteDirectoryIfEmpty(Path.GetDirectoryName(serverFile)!);
 	}
 
 	public void DeleteDirectory(string clientDirectory) {
-		var serverDirectory = GetRemotePath(clientDirectory);
+		var serverDirectory = Path.Join(_options.Directory, clientDirectory);
 		logger.LogDebug("Delete Directory {directory}", serverDirectory);
 		Directory.Delete(serverDirectory, recursive: true);
 		DeleteDirectoryIfEmpty(Path.GetDirectoryName(serverDirectory)!);

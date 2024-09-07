@@ -8,5 +8,5 @@ public interface IRemoteReadService {
 	bool IsDirectory(string relativePath);
 	RemoteDirectoryInfo GetDirectoryInfo(string relativeDirectory);
 	RemoteFileInfo GetFileInfo(string relativeFile);
-	Task<Stream> GetFileStream(string clientFile);
+	Task<Stream> GetFileStream(string relativeFile);
 }
