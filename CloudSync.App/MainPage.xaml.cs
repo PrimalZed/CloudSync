@@ -8,14 +8,14 @@ namespace CloudSync.App;
 /// An empty window that can be used on its own or navigated to within a Frame.
 /// </summary>
 public sealed partial class MainPage : Page {
-	public new SyncRootViewModel DataContext {
-		get => (SyncRootViewModel)base.DataContext;
+	public new RegistrarViewModel DataContext {
+		get => (RegistrarViewModel)base.DataContext;
 		set => base.DataContext = value;
 	}
 
 	public MainPage() {
 		InitializeComponent();
-		DataContext = App.Current.ServiceProvider.GetRequiredService<SyncRootViewModel>();
-		DataContext.UpdateIsRegistered();
+		DataContext = App.Current.ServiceProvider.GetRequiredService<RegistrarViewModel>();
+		DataContext.UpdateSyncRoots();
 	}
 }

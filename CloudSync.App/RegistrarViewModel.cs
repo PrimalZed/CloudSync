@@ -2,23 +2,26 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
 using Windows.Storage;
 
-namespace CloudSync.App; 
-public partial class SyncRootViewModel(
+namespace CloudSync.App;
+public partial class RegistrarViewModel(
 	SyncRootRegistrar registrar,
 	SyncProviderPool syncProviderPool,
 	ILogger<MainPage> logger
 ) : ObservableObject {
 	[ObservableProperty]
-	private bool isRegistered;
+	[NotifyPropertyChangedFor(nameof(IsRegistered))]
+	private IReadOnlyList<SyncRootInfo> syncRoots = [];
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(IsReady))]
 	private bool isPending = false;
 	[ObservableProperty]
 	private string? error;
 
+	public bool IsRegistered => SyncRoots.Any();
 	public bool IsReady => !IsPending;
 
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(IsReady))]
@@ -29,7 +32,7 @@ public partial class SyncRootViewModel(
 		Error = null;
 		try {
 			var registerCommand = new RegisterSyncRootCommand {
-				AccountId = "TestAccount1",
+				AccountId = @"Local!C:\SyncTestServer",
 				Directory = @"C:\SyncTestClient",
 				PopulationPolicy = PopulationPolicy.Full,
 			};
@@ -44,18 +47,18 @@ public partial class SyncRootViewModel(
 		IsPending = false;
 		RegisterCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
-		UpdateIsRegistered();
+		UpdateSyncRoots();
 	}
 
-	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(IsReady))]
-	private async Task Unregister() {
+	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(CanUnregister))]
+	private async Task Unregister(SyncRootInfo syncRoot) {
 		IsPending = true;
 		RegisterCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		Error = null;
 		try {
-			await syncProviderPool.Stop(@"C:\SyncTestClient");
-			registrar.Unregister("TestAccount1");
+			await syncProviderPool.Stop(syncRoot.Directory);
+			registrar.Unregister(syncRoot.Id);
 		}
 		catch (Exception ex) {
 			logger.LogError(ex, "Could not unregister");
@@ -64,10 +67,13 @@ public partial class SyncRootViewModel(
 		IsPending = false;
 		RegisterCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
-		UpdateIsRegistered();
+		UpdateSyncRoots();
 	}
 
-	public void UpdateIsRegistered() {
-		IsRegistered = registrar.IsRegistered();
+	public bool CanUnregister(SyncRootInfo? syncRoot) =>
+		IsReady && syncRoot is not null;
+
+	public void UpdateSyncRoots() {
+		SyncRoots = registrar.GetSyncRoots();
 	}
 }

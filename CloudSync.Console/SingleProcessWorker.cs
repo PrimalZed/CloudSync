@@ -2,7 +2,6 @@
 using PrimalZed.CloudSync.Async;
 using PrimalZed.CloudSync.Commands;
 using Windows.Storage;
-using Windows.Storage.Provider;
 
 namespace PrimalZed.CloudSync;
 public class SingleProcessWorker(
@@ -11,7 +10,7 @@ public class SingleProcessWorker(
 ) : BackgroundService {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 		var registerCommand = new RegisterSyncRootCommand {
-			AccountId = "TestAccount1",
+			AccountId = @"Local!C:\SyncTestServer",
 			Directory = @"C:\SyncTestClient",
 			PopulationPolicy = PopulationPolicy.Full,
 		};

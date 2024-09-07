@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
 using PrimalZed.CloudSync.Configuration;
 using System.Runtime.InteropServices;
@@ -13,10 +14,19 @@ public class SyncRootRegistrar(
 	IOptions<ProviderOptions> providerOptions,
 	ILogger<SyncRootRegistrar> logger
 ) {
-	public bool IsRegistered() {
+	public IReadOnlyList<SyncRootInfo> GetSyncRoots() {
 		var roots = StorageProviderSyncRootManager.GetCurrentSyncRoots();
-		return roots.Any((x) => x.Id.StartsWith(providerOptions.Value.ProviderId + "!"));
+		return roots
+			.Where((x) => x.Id.StartsWith(providerOptions.Value.ProviderId + "!"))
+			.Select((x) => new SyncRootInfo {
+				Id = x.Id,
+				Directory = x.Path.Path,
+			})
+			.ToArray();
 	}
+
+	public bool IsRegistered(string id) =>
+		StorageProviderSyncRootManager.GetCurrentSyncRoots().Any((x) => x.Id == id);
 
 	public string Register(RegisterSyncRootCommand command, IStorageFolder directory) {
 		// Stage 1: Setup
@@ -26,7 +36,7 @@ public class SyncRootRegistrar(
 		clientDirectory.Attributes &= ~System.IO.FileAttributes.NotContentIndexed;
 
 		var id = $"{providerOptions.Value.ProviderId}!{WindowsIdentity.GetCurrent().User}!{command.AccountId}";
-		if (IsRegistered()) {
+		if (IsRegistered(id)) {
 			logger.LogWarning("Unexpectedly already registered {syncRootId}", id);
 			Unregister(command.AccountId);
 		}
@@ -54,8 +64,7 @@ public class SyncRootRegistrar(
 		return id;
 	}
 
-	public void Unregister(string accountId) {
-		var id = $"{providerOptions.Value.ProviderId}!{WindowsIdentity.GetCurrent().User}!{accountId}";
+	public void Unregister(string id) {
 		logger.LogDebug("Unregistering {syncRootId}", id);
 		try {
 			StorageProviderSyncRootManager.Unregister(id);

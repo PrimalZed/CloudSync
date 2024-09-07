@@ -4,7 +4,11 @@
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 	xmlns:converters="using:CommunityToolkit.WinUI.Converters"
 	xmlns:local="using:CloudSync.App"
-	x:Class="CloudSync.App.MainPage">
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="CloudSync.App.MainPage"
+	d:DataContext="{d:DesignInstance Type=local:RegistrarViewModel}">
 	<Page.Resources>
 		<converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 		<converters:BoolToObjectConverter x:Key="BoolToNotVisiblilityConverter" TrueValue="Collapsed" FalseValue="Visible"/>
@@ -34,7 +38,12 @@
 			Register
 		</Button>
 
-		<Button HorizontalAlignment="Stretch" Command="{x:Bind DataContext.UnregisterCommand}">
+		<ListBox
+			x:Name="IdListBox"
+			ItemsSource="{x:Bind DataContext.SyncRoots, Mode=OneWay}"
+			DisplayMemberPath="Label"
+			SelectionChanged="{x:Bind DataContext.UnregisterCommand.NotifyCanExecuteChanged}"/>
+		<Button HorizontalAlignment="Stretch" Command="{x:Bind DataContext.UnregisterCommand}" CommandParameter="{x:Bind IdListBox.SelectedValue, Mode=OneWay}">
 			Unregister
 		</Button>
 		<TextBlock Text="{x:Bind DataContext.Error, Mode=OneWay}" HorizontalAlignment="Stretch" HorizontalTextAlignment="Center"/>

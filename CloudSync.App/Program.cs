@@ -11,7 +11,7 @@ builder.Services.AddCloudSyncWorker();
 builder.Services
 	.AddHostedService<SyncProviderWorker>()
 	//.AddHostedService<ShellWorker>()
-	.AddSingleton<SyncRootViewModel>()
+	.AddSingleton<RegistrarViewModel>()
 	.AddHostedService<AppService>();
 
 var host = builder.Build();
