@@ -32,7 +32,7 @@ public partial class RegistrarViewModel(
 		Error = null;
 		try {
 			var registerCommand = new RegisterSyncRootCommand {
-				AccountId = @"Local!C:\SyncTestServer",
+				AccountId = @"Local!C:|SyncTestServer",
 				Directory = @"C:\SyncTestClient",
 				PopulationPolicy = PopulationPolicy.Full,
 			};

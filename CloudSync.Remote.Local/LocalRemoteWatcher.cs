@@ -33,7 +33,7 @@ public sealed class LocalRemoteWatcher : IRemoteWatcher {
 	}
 
 	private FileSystemWatcher CreateWatcher() {
-		var remoteDirectory = (_contextAccessor.Context.RemoteInfo as LocalRemoteInfo)!.RemoteDirectory;
+		var remoteDirectory = _contextAccessor.Context.GetRemoteDirectory();
 		var watcher = new FileSystemWatcher(remoteDirectory) {
 			IncludeSubdirectories = true,
 			NotifyFilter = NotifyFilters.FileName

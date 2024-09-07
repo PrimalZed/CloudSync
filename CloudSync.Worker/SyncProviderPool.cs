@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
-using PrimalZed.CloudSync.Remote.Local;
 
 namespace PrimalZed.CloudSync;
 public class SyncProviderPool(
@@ -20,9 +19,6 @@ public class SyncProviderPool(
 			Id = syncRootId,
 			RootDirectory = rootDirectory,
 			PopulationPolicy = populationPolicy,
-			RemoteInfo = new LocalRemoteInfo {
-				RemoteDirectory = @"C:\SyncTestServer",
-			},
 		};
 		var thread = new CancellableThread((CancellationToken cancellation) => Run(context, cancellation), logger);
 		thread.Stopped += (object? sender, EventArgs e) => {
