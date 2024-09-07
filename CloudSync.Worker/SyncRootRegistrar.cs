@@ -18,7 +18,7 @@ public class SyncRootRegistrar(
 		return roots.Any((x) => x.Id.StartsWith(providerOptions.Value.ProviderId + "!"));
 	}
 
-	public void Register(RegisterSyncRootCommand command, IStorageFolder directory) {
+	public string Register(RegisterSyncRootCommand command, IStorageFolder directory) {
 		// Stage 1: Setup
 		//--------------------------------------------------------------------------------------------
 		// The client folder (syncroot) must be indexed in order for states to properly display
@@ -50,6 +50,8 @@ public class SyncRootRegistrar(
 
 		logger.LogDebug("Registering {syncRootId}", id);
 		StorageProviderSyncRootManager.Register(info);
+
+		return id;
 	}
 
 	public void Unregister(string accountId) {

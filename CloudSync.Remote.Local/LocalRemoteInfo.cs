@@ -1,8 +1,7 @@
-﻿using Microsoft.Extensions.Options;
-using PrimalZed.CloudSync.Remote.Abstractions;
+﻿using PrimalZed.CloudSync.Abstractions;
 
 namespace PrimalZed.CloudSync.Remote.Local;
-public class LocalRemoteInfo(IOptions<LocalRemoteOptions> options) : IRemoteInfo {
-	public string AccountId => options.Value.AccountId;
-	public string Identity => $"Local directory {options.Value.Directory}";
+public record LocalRemoteInfo : IRemoteInfo {
+	public required string RemoteDirectory { get; init; }
+	public string Identity => $"Local directory {RemoteDirectory}";
 }

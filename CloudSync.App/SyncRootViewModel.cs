@@ -34,8 +34,8 @@ public partial class SyncRootViewModel(
 				PopulationPolicy = PopulationPolicy.Full,
 			};
 			var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
-			registrar.Register(registerCommand, storageFolder);
-			syncProviderPool.Start(registerCommand.Directory, (Windows.Storage.Provider.StorageProviderPopulationPolicy)registerCommand.PopulationPolicy);
+			var id = registrar.Register(registerCommand, storageFolder);
+			syncProviderPool.Start(id, registerCommand.Directory, registerCommand.PopulationPolicy);
 		}
 		catch (Exception ex) {
 			logger.LogError(ex, "Could not register");

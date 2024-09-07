@@ -1,26 +1,30 @@
-﻿using Microsoft.Extensions.Logging;
-using PrimalZed.CloudSync.Async;
-using PrimalZed.CloudSync.Helpers;
-using PrimalZed.CloudSync.IO;
-using Windows.Storage.Provider;
-using static Vanara.PInvoke.CldApi;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using PrimalZed.CloudSync.Abstractions;
+using PrimalZed.CloudSync.Commands;
+using PrimalZed.CloudSync.Remote.Local;
 
 namespace PrimalZed.CloudSync;
 public class SyncProviderPool(
-	SyncProvider syncProvider,
-	PlaceholdersService placeholdersService,
-	ClientWatcherFactory clientWatcherFactory,
-	RemoteWatcherFactory remoteWatcherFactory,
+	IServiceScopeFactory scopeFactory,
 	ILogger<SyncProviderPool> logger
 ) {
 	private readonly Dictionary<string, CancellableThread> _threads = [];
 	private bool _stopping = false;
 
-	public void Start(string rootDirectory, StorageProviderPopulationPolicy populationPolicy) {
+	public void Start(string syncRootId, string rootDirectory, PopulationPolicy populationPolicy) {
 		if (_stopping) {
 			return;
 		}
-		var thread = new CancellableThread((CancellationToken cancellation) => Run(rootDirectory, populationPolicy, cancellation), logger);
+		var context = new SyncProviderContext {
+			Id = syncRootId,
+			RootDirectory = rootDirectory,
+			PopulationPolicy = populationPolicy,
+			RemoteInfo = new LocalRemoteInfo {
+				RemoteDirectory = @"C:\SyncTestServer",
+			},
+		};
+		var thread = new CancellableThread((CancellationToken cancellation) => Run(context, cancellation), logger);
 		thread.Stopped += (object? sender, EventArgs e) => {
 			_threads.Remove(rootDirectory);
 			(sender as CancellableThread)?.Dispose();
@@ -45,37 +49,13 @@ public class SyncProviderPool(
 		await thread.Stop();
 	}
 
-	private async Task Run(string rootDirectory, StorageProviderPopulationPolicy populationPolicy, CancellationToken cancellation) {
-		logger.LogDebug("Connecting...");
-		// Hook up callback methods (in this class) for transferring files between client and server
-		using var providerCancellation = new CancellationTokenSource();
-		using var providerDisposable = new Disposable(providerCancellation.Cancel);
-		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(rootDirectory, providerCancellation.Token), syncProvider.Disconnect);
-		_ = Task.Run(() => syncProvider.ProcessQueueAsync(providerCancellation.Token));
+	private async Task Run(SyncProviderContext context, CancellationToken cancellation) {
+		using var scope = scopeFactory.CreateScope();
+		var contextAccessor = scope.ServiceProvider.GetRequiredService<SyncProviderContextAccessor>();
+		contextAccessor.Context = context;
 
-		// Create the placeholders in the client folder so the user sees something
-		if (populationPolicy == StorageProviderPopulationPolicy.AlwaysFull) {
-			placeholdersService.CreateBulk(rootDirectory, string.Empty);
-		}
-
-		// TODO: Sync changes since last time this service ran
-
-		// Stage 2: Running
-		//--------------------------------------------------------------------------------------------
-		// The file watcher loop for this sample will run until the user presses Ctrl-C.
-		// The file watcher will look for any changes on the files in the client (syncroot) in order
-		// to let the cloud know.
-		using var clientWatcher = clientWatcherFactory.CreateAndStart(rootDirectory);
-		using var serverWatcher = remoteWatcherFactory.CreateAndStart(rootDirectory, cancellation);
-
-		// Run until SIGTERM
-		await cancellation;
-
-		logger.LogDebug("Disconnecting...");
-		providerCancellation.Cancel();
-
-		// TODO: Only on uninstall (or not at all?)
-		//placeholdersService.DeleteBulk(directory);
+		var syncProvider = scope.ServiceProvider.GetRequiredService<SyncProvider>();
+		await syncProvider.Run(cancellation);
 	}
 
 	private sealed class CancellableThread : IDisposable {

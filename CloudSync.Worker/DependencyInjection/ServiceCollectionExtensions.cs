@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.IO;
 using PrimalZed.CloudSync.Remote.Abstractions;
@@ -27,19 +28,24 @@ public static class ServiceCollectionExtensions {
 			.AddSingleton<IRemoteReadService>((sp) => sp.GetRequiredService<IRemoteReadWriteService>())
 			.AddTransient<IRemoteWatcher, LocalRemoteWatcher>()
 			.AddSingleton<PlaceholdersService>()
-			.AddSingleton<SyncProvider>()
-			.AddSingleton<SyncRootRegistrar>()
 			.AddSingleton<SyncProviderPool>()
+			.AddSingleton<SyncProviderContextAccessor>()
+			.AddSingleton<ISyncProviderContextAccessor>((sp) => sp.GetRequiredService<SyncProviderContextAccessor>())
+
+			// Sync Provider services
+			.AddScoped<SyncProvider>()
+			.AddScoped<SyncRootConnector>()
+			.AddScoped<SyncRootRegistrar>()
 			.AddTransient<ClientWatcher>()
-			.AddSingleton<CreateClientWatcher>((sp) => (string rootDirectory) =>
+			.AddScoped<CreateClientWatcher>((sp) => (string rootDirectory) =>
 				new ClientWatcher(rootDirectory, sp.GetRequiredService<IRemoteReadWriteService>(), sp.GetRequiredService<ILogger<ClientWatcher>>())
 			)
-			.AddSingleton<ClientWatcherFactory>()
+			.AddScoped<ClientWatcherFactory>()
 			.AddTransient<RemoteWatcher>()
-			.AddSingleton<CreateRemoteWatcher>((sp) => (string rootDirectory) =>
+			.AddScoped<CreateRemoteWatcher>((sp) => (string rootDirectory) =>
 				new RemoteWatcher(rootDirectory, sp.GetRequiredService<IRemoteReadService>(), sp.GetRequiredService<IRemoteWatcher>(), sp.GetRequiredService<PlaceholdersService>(), sp.GetRequiredService<ILogger<RemoteWatcher>>())
 			)
-			.AddSingleton<RemoteWatcherFactory>()
+			.AddScoped<RemoteWatcherFactory>()
 
 			// Shell
 			.AddCommonClassObjects()
