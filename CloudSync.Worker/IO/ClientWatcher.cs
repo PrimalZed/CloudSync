@@ -2,27 +2,30 @@ using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Interop;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using PrimalZed.CloudSync.Helpers;
+using PrimalZed.CloudSync.Abstractions;
 
 namespace PrimalZed.CloudSync.IO;
 public class ClientWatcher : IDisposable {
-	public string RootDirectory { get; init; }
+	private readonly ISyncProviderContextAccessor _contextAccessor;
 	private readonly IRemoteReadWriteService _remoteService;
 	private readonly ILogger _logger;
 	private readonly FileSystemWatcher _watcher;
 
+	private string _rootDirectory => _contextAccessor.Context.RootDirectory;
+
 	public ClientWatcher(
-		string rootDirectory,
+		ISyncProviderContextAccessor contextAccessor,
 		IRemoteReadWriteService serverService,
 		ILogger<ClientWatcher> logger
 	) {
-		RootDirectory = rootDirectory;
+		_contextAccessor = contextAccessor;
 		_remoteService = serverService;
 		_logger = logger;
-		_watcher = CreateWatcher(rootDirectory);
+		_watcher = CreateWatcher();
 	}
 
-	private FileSystemWatcher CreateWatcher(string rootDirectory) {
-		var watcher = new FileSystemWatcher(rootDirectory) {
+	private FileSystemWatcher CreateWatcher() {
+		var watcher = new FileSystemWatcher(_rootDirectory) {
 			IncludeSubdirectories = true,
 			NotifyFilter = NotifyFilters.FileName
 				| NotifyFilters.DirectoryName
@@ -47,7 +50,7 @@ public class ClientWatcher : IDisposable {
 					fileInfo.Attributes.HasAnySyncFlag(SyncAttributes.UNPINNED)
 					&& !fileInfo.Attributes.HasFlag(FileAttributes.Offline)
 				) {
-					var relativePath = PathMapper.GetRelativePath(e.FullPath, rootDirectory);
+					var relativePath = PathMapper.GetRelativePath(e.FullPath, _rootDirectory);
 					CloudFilter.DehydratePlaceholder(e.FullPath, relativePath, fileInfo.Length);
 				}
 			}
@@ -59,16 +62,16 @@ public class ClientWatcher : IDisposable {
 				// await _serverService.UpdateDirectory(directory, e.FullPath);
 			}
 			else {
-				await _remoteService.UpdateFile(rootDirectory, e.FullPath);
+				await _remoteService.UpdateFile(e.FullPath);
 			}
 		};
 		watcher.Created += async (object sender, FileSystemEventArgs e) => {
 			_logger.LogDebug("Created {path}", e.FullPath);
 			if (File.GetAttributes(e.FullPath).HasFlag(FileAttributes.Directory)) {
-				await _remoteService.CreateDirectory(rootDirectory, e.FullPath);
+				await _remoteService.CreateDirectory(e.FullPath);
 			}
 			else {
-				await _remoteService.CreateFile(rootDirectory, e.FullPath);
+				await _remoteService.CreateFile(e.FullPath);
 			}
 		};
 		watcher.Error += (object sender, ErrorEventArgs e) => {
@@ -85,16 +88,5 @@ public class ClientWatcher : IDisposable {
 
 	public void Dispose() {
 		_watcher.Dispose();
-	}
-}
-
-public delegate ClientWatcher CreateClientWatcher(string rootDirectory);
-
-public class ClientWatcherFactory(CreateClientWatcher create) {
-	public ClientWatcher CreateAndStart(string rootDirectory) {
-		var watcher = create(rootDirectory);
-		watcher.Start();
-
-		return watcher;
 	}
 }

@@ -1,18 +1,18 @@
 using PrimalZed.CloudSync.Helpers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using PrimalZed.CloudSync.Remote.Abstractions;
+using PrimalZed.CloudSync.Abstractions;
 
 namespace PrimalZed.CloudSync.Remote.Local;
 public class LocalRemoteReadWriteService(
-	IOptions<LocalRemoteOptions> options,
+	ISyncProviderContextAccessor contextAccessor,
 	ILogger<LocalRemoteReadWriteService> logger
-) : LocalRemoteReadService(options, logger), IRemoteReadWriteService {
+) : LocalRemoteReadService(contextAccessor, logger), IRemoteReadWriteService {
 	private readonly FileEqualityComparer _fileComparer = new ();
 	private readonly DirectoryEqualityComparer _directoryComparer = new ();
 
-	public async Task CreateFile(string rootDirectory, string clientFile) {
-		var serverFile = PathMapper.ReplaceStart(clientFile, rootDirectory, _options.Directory);
+	public async Task CreateFile(string clientFile) {
+		var serverFile = PathMapper.ReplaceStart(clientFile, _context.RootDirectory, _localContext.RemoteDirectory);
 
 		if (Path.Exists(serverFile)) {
 			throw new Exception("Conflict: already exists???");
@@ -28,8 +28,8 @@ public class LocalRemoteReadWriteService(
 		);
 	}
 
-	public async Task UpdateFile(string rootDirectory, string clientFile) {
-		var serverFile = PathMapper.ReplaceStart(clientFile, rootDirectory, _options.Directory);
+	public async Task UpdateFile(string clientFile) {
+		var serverFile = PathMapper.ReplaceStart(clientFile, _context.RootDirectory, _localContext.RemoteDirectory);
 		// Update only - CreateFile to create!
 		if (!Path.Exists(serverFile)) {
 			return;
@@ -61,15 +61,15 @@ public class LocalRemoteReadWriteService(
 		);
 	}
 
-	public Task CreateDirectory(string rootDirectory, string clientDirectory) {
-		var serverDirectory = PathMapper.ReplaceStart(clientDirectory, rootDirectory, _options.Directory);
+	public Task CreateDirectory(string relativeFile) {
+		var serverDirectory = Path.Join(_localContext.RemoteDirectory, relativeFile);
 		logger.LogDebug("Create Directory {directory}", serverDirectory);
 
 		if (Path.Exists(serverDirectory)) {
 			throw new Exception("Conflict: already exists");
 		}
 
-		var clientDirectoryInfo = new DirectoryInfo(clientDirectory);
+		var clientDirectoryInfo = new DirectoryInfo(relativeFile);
 		var serverDirectoryInfo = Directory.CreateDirectory(serverDirectory);
 		serverDirectoryInfo.CreationTimeUtc = clientDirectoryInfo.CreationTimeUtc;
 		serverDirectoryInfo.LastWriteTimeUtc = clientDirectoryInfo.LastWriteTimeUtc;
@@ -78,15 +78,15 @@ public class LocalRemoteReadWriteService(
 		return Task.CompletedTask;
 	}
 
-	public Task UpdateDirectory(string rootDirectory, string clientDirectory) {
-		var serverDirectory = PathMapper.ReplaceStart(clientDirectory, rootDirectory, _options.Directory);
+	public Task UpdateDirectory(string relativeDirectory) {
+		var serverDirectory = Path.Join(_localContext.RemoteDirectory, relativeDirectory);
 		logger.LogDebug("Update Directory {directory}", serverDirectory);
 
-		if (_directoryComparer.Equals(new DirectoryInfo(clientDirectory), new DirectoryInfo(serverDirectory))) {
+		if (_directoryComparer.Equals(new DirectoryInfo(relativeDirectory), new DirectoryInfo(serverDirectory))) {
 			return Task.CompletedTask;
 		}
 
-		var clientDirectoryInfo = new DirectoryInfo(clientDirectory);
+		var clientDirectoryInfo = new DirectoryInfo(relativeDirectory);
 		_ = new DirectoryInfo(serverDirectory) {
 			CreationTimeUtc = clientDirectoryInfo.CreationTimeUtc,
 			LastWriteTimeUtc = clientDirectoryInfo.LastWriteTimeUtc,
@@ -97,39 +97,39 @@ public class LocalRemoteReadWriteService(
 	}
 
 	public void MoveFile(string oldRelativeFile, string newRelativeFile) {
-		var oldServerFile = Path.Join(_options.Directory, oldRelativeFile);
-		var newServerFile = Path.Join(_options.Directory, newRelativeFile);
+		var oldServerFile = Path.Join(_localContext.RemoteDirectory, oldRelativeFile);
+		var newServerFile = Path.Join(_localContext.RemoteDirectory, newRelativeFile);
 		logger.LogDebug("Move File {old} -> {new}", oldServerFile, newServerFile);
 		File.Move(oldServerFile, newServerFile);
 	}
 
-	public void MoveDirectory(string oldClientDirectory, string newClientDirectory) {
-		var oldServerDirectory = Path.Join(_options.Directory, oldClientDirectory);
-		var newServerDirectory = Path.Join(_options.Directory, newClientDirectory);
+	public void MoveDirectory(string oldRelativeDirectory, string newRelativeDirectory) {
+		var oldServerDirectory = Path.Join(_localContext.RemoteDirectory, oldRelativeDirectory);
+		var newServerDirectory = Path.Join(_localContext.RemoteDirectory, newRelativeDirectory);
 		logger.LogDebug("Move Directory {old} -> {new}", oldServerDirectory, newServerDirectory);
 		Directory.Move(oldServerDirectory, newServerDirectory);
 	}
 
-	public void DeleteFile(string clientFile) {
-		var serverFile = Path.Join(_options.Directory, clientFile);
+	public void DeleteFile(string relativeFile) {
+		var serverFile = Path.Join(_localContext.RemoteDirectory, relativeFile);
 		logger.LogDebug("Delete File {file}", serverFile);
 		File.Delete(serverFile);
 		DeleteDirectoryIfEmpty(Path.GetDirectoryName(serverFile)!);
 	}
 
-	public void DeleteDirectory(string clientDirectory) {
-		var serverDirectory = Path.Join(_options.Directory, clientDirectory);
+	public void DeleteDirectory(string relativeDirectory) {
+		var serverDirectory = Path.Join(_localContext.RemoteDirectory, relativeDirectory);
 		logger.LogDebug("Delete Directory {directory}", serverDirectory);
 		Directory.Delete(serverDirectory, recursive: true);
 		DeleteDirectoryIfEmpty(Path.GetDirectoryName(serverDirectory)!);
 	}
 
 	private void DeleteDirectoryIfEmpty(string serverPath) {
-		if (!_options.EnableDeleteDirectoryWhenEmpty) {
+		if (!_localContext.EnableDeleteDirectoryWhenEmpty) {
 			return;
 		}
 		if (
-			serverPath == _options.Directory
+			serverPath == _localContext.RemoteDirectory
 			|| Directory.EnumerateFileSystemEntries(serverPath).Any()
 		) {
 			return;

@@ -1,11 +1,11 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Remote.Abstractions;
 
 namespace PrimalZed.CloudSync.Remote.Local;
 public sealed class LocalRemoteWatcher : IRemoteWatcher {
-	private readonly LocalRemoteOptions _options;
+	private readonly ISyncProviderContextAccessor _contextAccessor;
 	private readonly LocalRemoteReadService _readService;
 	private readonly ILogger _logger;
 
@@ -18,11 +18,11 @@ public sealed class LocalRemoteWatcher : IRemoteWatcher {
 	private readonly FileSystemWatcher _watcher;
 
 	public LocalRemoteWatcher(
-		IOptions<LocalRemoteOptions> localServerOptions,
+		ISyncProviderContextAccessor contextAccessor,
 		IRemoteReadService readService,
 		ILogger<LocalRemoteWatcher> logger
 	) {
-		_options = localServerOptions.Value;
+		_contextAccessor = contextAccessor;
 		if (readService is not LocalRemoteReadService localReadService) {
 			throw new ArgumentException($"Must be {nameof(LocalRemoteReadService)}", nameof(readService));
 		}
@@ -33,7 +33,8 @@ public sealed class LocalRemoteWatcher : IRemoteWatcher {
 	}
 
 	private FileSystemWatcher CreateWatcher() {
-		var watcher = new FileSystemWatcher(_options.Directory) {
+		var remoteDirectory = (_contextAccessor.Context.RemoteInfo as LocalRemoteInfo)!.RemoteDirectory;
+		var watcher = new FileSystemWatcher(remoteDirectory) {
 			IncludeSubdirectories = true,
 			NotifyFilter = NotifyFilters.FileName
 				| NotifyFilters.DirectoryName

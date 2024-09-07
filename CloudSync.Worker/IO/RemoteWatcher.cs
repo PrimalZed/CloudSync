@@ -3,13 +3,11 @@ using PrimalZed.CloudSync.Remote.Abstractions;
 
 namespace PrimalZed.CloudSync.IO; 
 public sealed class RemoteWatcher(
-	string rootDirectory,
 	IRemoteReadService remoteReadService,
 	IRemoteWatcher remoteWatcher,
 	PlaceholdersService placeholderService,
 	ILogger<RemoteWatcher> logger
 ) : IDisposable {
-	public string RootDirectory { get; init; } = rootDirectory;
 	public void Start(CancellationToken stoppingToken) {
 		remoteWatcher.Created += HandleCreated;
 		remoteWatcher.Changed += HandleChanged;
@@ -22,10 +20,10 @@ public sealed class RemoteWatcher(
 		logger.LogDebug("Created {path}", relativePath);
 		try {
 			if (remoteReadService.IsDirectory(relativePath)) {
-				await placeholderService.CreateOrUpdateDirectory(rootDirectory, relativePath);
+				await placeholderService.CreateOrUpdateDirectory(relativePath);
 			}
 			else {
-				await placeholderService.CreateOrUpdateFile(rootDirectory, relativePath);
+				await placeholderService.CreateOrUpdateFile(relativePath);
 			}
 		}
 		catch (Exception ex) {
@@ -37,10 +35,10 @@ public sealed class RemoteWatcher(
 		logger.LogDebug("Changed {path}", relativePath);
 		try {
 			if (remoteReadService.IsDirectory(relativePath)) {
-				await placeholderService.UpdateDirectory(rootDirectory, relativePath);
+				await placeholderService.UpdateDirectory(relativePath);
 			}
 			else {
-				await placeholderService.UpdateFile(rootDirectory, relativePath);
+				await placeholderService.UpdateFile(relativePath);
 			}
 		}
 		catch (Exception ex) {
@@ -54,10 +52,10 @@ public sealed class RemoteWatcher(
 		logger.LogDebug("Changed {oldPath} -> {path}", oldRelativePath, newRelativePath);
 		try {
 			if (remoteReadService.IsDirectory(newRelativePath)) {
-				await placeholderService.RenameDirectory(rootDirectory, oldRelativePath, newRelativePath);
+				await placeholderService.RenameDirectory(oldRelativePath, newRelativePath);
 			}
 			else {
-				await placeholderService.RenameFile(rootDirectory, oldRelativePath, newRelativePath);
+				await placeholderService.RenameFile(oldRelativePath, newRelativePath);
 			}
 		}
 		catch (Exception ex) {
@@ -70,7 +68,7 @@ public sealed class RemoteWatcher(
 		// await Task.Delay(1000);
 		logger.LogDebug("Deleted {path}", relativePath);
 		try {
-			placeholderService.Delete(rootDirectory, relativePath);
+			placeholderService.Delete(relativePath);
 		}
 		catch (Exception ex) {
 			logger.LogError(ex, "Delete placeholder failed");
@@ -82,16 +80,5 @@ public sealed class RemoteWatcher(
 		remoteWatcher.Changed -= HandleChanged;
 		remoteWatcher.Renamed -= HandleRenamed;
 		remoteWatcher.Deleted -= HandleDeleted;
-	}
-}
-
-public delegate RemoteWatcher CreateRemoteWatcher(string rootDirectory);
-
-public class RemoteWatcherFactory(CreateRemoteWatcher create) {
-	public RemoteWatcher CreateAndStart(string rootDirectory, CancellationToken stoppingToken = default) {
-		var watcher = create(rootDirectory);
-		watcher.Start(stoppingToken);
-
-		return watcher;
 	}
 }

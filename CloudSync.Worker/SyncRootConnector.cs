@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Interop;
 using PrimalZed.CloudSync.Remote.Abstractions;
@@ -8,7 +9,6 @@ using static Vanara.PInvoke.CldApi;
 
 namespace PrimalZed.CloudSync;
 public record Callback {
-	public required string RootDirectory { get; init; }
 	public required CF_CALLBACK_TYPE Type { get; init; }
 	public required CF_CALLBACK_INFO Info { get; init; }
 	public CallbackParameters Parameters { get; init; } = new CallbackParameters();
@@ -18,6 +18,7 @@ public record RenameCompletionCallbackParameters : CallbackParameters {
 	public required string SourcePath { get; init; }
 }
 public sealed class SyncRootConnector(
+	ISyncProviderContextAccessor contextAccessor,
 	IRemoteReadWriteService remoteService,
 	ILogger<SyncRootConnector> logger
 ) : IDisposable {
@@ -28,20 +29,19 @@ public sealed class SyncRootConnector(
 			}
 		);
 	private readonly CancellationTokenSource _disposeTokenSource = new ();
+	private readonly string _rootDirectory = contextAccessor.Context.RootDirectory;
 
-	public CF_CONNECTION_KEY Connect(string rootDirectory, CancellationToken stoppingToken = default) {
-		logger.LogDebug("Connecting sync provider to {syncRootPath}", rootDirectory);
+	public CF_CONNECTION_KEY Connect(CancellationToken stoppingToken = default) {
+		logger.LogDebug("Connecting sync provider to {syncRootPath}", _rootDirectory);
 		CloudFilter.ConnectSyncRoot(
-			rootDirectory,
+			_rootDirectory,
 			new SyncRootEvents {
-				FetchPlaceholders = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) =>
-					FetchPlaceholders(rootDirectory, callbackInfo, callbackParameters),
-				FetchData = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) =>
-					FetchData(rootDirectory, callbackInfo, callbackParameters),
+				FetchPlaceholders = FetchPlaceholders,
+				FetchData = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) => 
+					FetchData(callbackInfo, callbackParameters),
 				OnCloseCompletion = OnCloseCompletion,
 				OnRenameCompletion = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) => 
 					_channel.Writer.WriteAsync(new Callback {
-						RootDirectory = rootDirectory,
 						Type = CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION,
 						Info = callbackInfo,
 						Parameters = new RenameCompletionCallbackParameters {
@@ -50,7 +50,6 @@ public sealed class SyncRootConnector(
 					}),
 				OnDeleteCompletion = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) =>
 					_channel.Writer.WriteAsync(new Callback {
-						RootDirectory = rootDirectory,
 						Type = CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION,
 						Info = callbackInfo,
 					}),
@@ -71,18 +70,18 @@ public sealed class SyncRootConnector(
 		while (!cancellationToken.IsCancellationRequested) {
 			var e = await _channel.Reader.ReadAsync(cancellationToken);
 			var task = e.Type switch {
-				CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION => OnRenameCompletion(e.RootDirectory, e.Info, e.Parameters),
-				CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION => OnDeleteCompletion(e.RootDirectory, e.Info),
+				CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION => OnRenameCompletion(_rootDirectory, e.Info, e.Parameters),
+				CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION => OnDeleteCompletion(_rootDirectory, e.Info),
 				_ => throw new NotImplementedException(),
 			};
 			await task;
 		}
 	}
 
-	private void FetchPlaceholders(string rootDirectory, CF_CALLBACK_INFO callbackInfo, CF_CALLBACK_PARAMETERS callbackParameters) {
+	private void FetchPlaceholders(in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) {
 		logger.LogDebug("Fetch Placeholders '{path}' '{pattern}'", callbackInfo.NormalizedPath, callbackParameters.FetchPlaceholders.Pattern);
 		var clientDirectory = Path.Join(callbackInfo.VolumeDosName, callbackInfo.NormalizedPath[1..]);
-		var relativeDirectory = PathMapper.GetRelativePath(clientDirectory, rootDirectory);
+		var relativeDirectory = PathMapper.GetRelativePath(clientDirectory, _rootDirectory);
 		var fileInfos = remoteService.EnumerateFiles(relativeDirectory, callbackParameters.FetchPlaceholders.Pattern);
 		var directoryInfos = remoteService.EnumerateDirectories(relativeDirectory, callbackParameters.FetchPlaceholders.Pattern);
 		var fileSystemInfos = fileInfos.Concat<RemoteFileSystemInfo>(directoryInfos).ToArray();
@@ -90,7 +89,7 @@ public sealed class SyncRootConnector(
 		CloudFilter.TransferPlaceholders(callbackInfo, fileSystemInfos);
 	}
 
-	private async void FetchData(string rootDirectory, CF_CALLBACK_INFO callbackInfo, CF_CALLBACK_PARAMETERS callbackParameters) {
+	private async void FetchData(CF_CALLBACK_INFO callbackInfo, CF_CALLBACK_PARAMETERS callbackParameters) {
 		logger.LogDebug(
 			"Fetch data, {file}, fileSize: {fileSize}, offset: {offset}, total: {total}",
 			callbackInfo.NormalizedPath,
@@ -108,7 +107,7 @@ public sealed class SyncRootConnector(
 				+ callbackParameters.FetchData.RequiredLength;
 			long readLength = 0;
 
-			var relativeFile = PathMapper.GetRelativePath(clientFile, rootDirectory);
+			var relativeFile = PathMapper.GetRelativePath(clientFile, _rootDirectory);
 			using var fileStream = await remoteService.GetFileStream(relativeFile);
 			fileStream.Seek(currentOffset, SeekOrigin.Begin);
 			while (currentOffset <= targetOffset && (readLength = fileStream.Read(buffer, 0, buffer.Length)) > 0) {
@@ -148,6 +147,7 @@ public sealed class SyncRootConnector(
 		var oldClientPath = Path.Join(callbackInfo.VolumeDosName, renameCompletionParameters.SourcePath[1..]);
 		var oldRelativePath = PathMapper.GetRelativePath(oldClientPath, rootDirectory);
 		var newClientPath = Path.Join(callbackInfo.VolumeDosName, callbackInfo.NormalizedPath[1..]);
+		var newRelativePath = PathMapper.GetRelativePath(newClientPath,	rootDirectory);
 		try {
 			if (!remoteService.Exists(oldRelativePath)) {
 				return;
@@ -155,18 +155,18 @@ public sealed class SyncRootConnector(
 			// If moving outside of sync directory, treat like a delete
 			if (!newClientPath.StartsWith(rootDirectory)) {
 				if (remoteService.IsDirectory(oldRelativePath)) {
-					remoteService.DeleteDirectory(oldClientPath);
+					remoteService.DeleteDirectory(oldRelativePath);
 				}
 				else {
-					remoteService.DeleteFile(oldClientPath);
+					remoteService.DeleteFile(oldRelativePath);
 				}
 				return;
 			}
 			if (File.GetAttributes(newClientPath).HasFlag(FileAttributes.Directory)) {
-				remoteService.MoveDirectory(oldClientPath, newClientPath);
+				remoteService.MoveDirectory(oldRelativePath, newRelativePath);
 			}
 			else {
-				remoteService.MoveFile(oldClientPath, newClientPath);
+				remoteService.MoveFile(oldRelativePath, newRelativePath);
 			}
 		}
 		catch (Exception ex) {
@@ -195,7 +195,7 @@ public sealed class SyncRootConnector(
 				// serverService.DeleteDirectory(clientPath);
 			}
 			else {
-				remoteService.DeleteFile(clientPath);
+				remoteService.DeleteFile(relativePath);
 			}
 		}
 		catch (Exception ex) {

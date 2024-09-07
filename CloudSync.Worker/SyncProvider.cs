@@ -10,8 +10,8 @@ public class SyncProvider(
 	ISyncProviderContextAccessor contextAccessor,
 	SyncRootConnector syncProvider,
 	PlaceholdersService placeholdersService,
-	ClientWatcherFactory clientWatcherFactory,
-	RemoteWatcherFactory remoteWatcherFactory,
+	ClientWatcher clientWatcher,
+	RemoteWatcher remoteWatcher,
 	ILogger<SyncProvider> logger
 ) {
 	public async Task Run(CancellationToken cancellation) {
@@ -19,12 +19,12 @@ public class SyncProvider(
 		// Hook up callback methods (in this class) for transferring files between client and server
 		using var providerCancellation = new CancellationTokenSource();
 		using var providerDisposable = new Disposable(providerCancellation.Cancel);
-		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(contextAccessor.Context.RootDirectory, providerCancellation.Token), syncProvider.Disconnect);
+		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(providerCancellation.Token), syncProvider.Disconnect);
 		_ = Task.Run(() => syncProvider.ProcessQueueAsync(providerCancellation.Token));
 
 		// Create the placeholders in the client folder so the user sees something
 		if (contextAccessor.Context.PopulationPolicy == Commands.PopulationPolicy.AlwaysFull) {
-			placeholdersService.CreateBulk(contextAccessor.Context.RootDirectory, string.Empty);
+			placeholdersService.CreateBulk(string.Empty);
 		}
 
 		// TODO: Sync changes since last time this service ran
@@ -34,8 +34,8 @@ public class SyncProvider(
 		// The file watcher loop for this sample will run until the user presses Ctrl-C.
 		// The file watcher will look for any changes on the files in the client (syncroot) in order
 		// to let the cloud know.
-		using var clientWatcher = clientWatcherFactory.CreateAndStart(contextAccessor.Context.RootDirectory);
-		using var serverWatcher = remoteWatcherFactory.CreateAndStart(contextAccessor.Context.RootDirectory, cancellation);
+		clientWatcher.Start();
+		remoteWatcher.Start(cancellation);
 
 		// Run until SIGTERM
 		await cancellation;

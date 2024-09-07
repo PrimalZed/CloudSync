@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using PrimalZed.CloudSync.Helpers;
-using PrimalZed.CloudSync.Remote.Local;
 using System.Runtime.InteropServices;
 using Vanara.InteropServices;
 using Vanara.PInvoke;
@@ -11,7 +9,6 @@ using static Vanara.PInvoke.Shell32;
 namespace PrimalZed.CloudSync.Shell.Local;
 [ComVisible(true), Guid("703e61b4-f4a4-4803-b824-9d23dad651bc")]
 public class LocalThumbnailProvider(
-	IOptions<LocalRemoteOptions> localRemoteOptions,
 	ILogger<LocalThumbnailProvider> logger
 ) : IThumbnailProvider, IInitializeWithItem {
 	private IShellItem2? _clientItem, _serverItem;
@@ -27,7 +24,8 @@ public class LocalThumbnailProvider(
 				return HRESULT.E_UNEXPECTED;
 			}
 
-			var remotePath = PathMapper.ReplaceStart(clientPath, rootDirectory, localRemoteOptions.Value.Directory);
+			var remoteDirectory = "TODO";
+			var remotePath = PathMapper.ReplaceStart(clientPath, rootDirectory, remoteDirectory);
 			_serverItem = SHCreateItemFromParsingName<IShellItem2>(remotePath);
 		}
 		catch (Exception ex) {

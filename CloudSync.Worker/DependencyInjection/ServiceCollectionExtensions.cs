@@ -18,16 +18,6 @@ public static class ServiceCollectionExtensions {
 				options.ProviderId = "PrimalZed:CloudSync";
 			})
 			.Services
-			.AddOptionsWithValidateOnStart<LocalRemoteOptions>()
-			.Configure((options) => {
-				options.AccountId = "TestAccount1";
-				options.Directory = @"C:\SyncTestServer";
-			})
-			.Services
-			.AddSingleton<IRemoteReadWriteService, LocalRemoteReadWriteService>()
-			.AddSingleton<IRemoteReadService>((sp) => sp.GetRequiredService<IRemoteReadWriteService>())
-			.AddTransient<IRemoteWatcher, LocalRemoteWatcher>()
-			.AddSingleton<PlaceholdersService>()
 			.AddSingleton<SyncProviderPool>()
 			.AddSingleton<SyncProviderContextAccessor>()
 			.AddSingleton<ISyncProviderContextAccessor>((sp) => sp.GetRequiredService<SyncProviderContextAccessor>())
@@ -36,16 +26,12 @@ public static class ServiceCollectionExtensions {
 			.AddScoped<SyncProvider>()
 			.AddScoped<SyncRootConnector>()
 			.AddScoped<SyncRootRegistrar>()
-			.AddTransient<ClientWatcher>()
-			.AddScoped<CreateClientWatcher>((sp) => (string rootDirectory) =>
-				new ClientWatcher(rootDirectory, sp.GetRequiredService<IRemoteReadWriteService>(), sp.GetRequiredService<ILogger<ClientWatcher>>())
-			)
-			.AddScoped<ClientWatcherFactory>()
-			.AddTransient<RemoteWatcher>()
-			.AddScoped<CreateRemoteWatcher>((sp) => (string rootDirectory) =>
-				new RemoteWatcher(rootDirectory, sp.GetRequiredService<IRemoteReadService>(), sp.GetRequiredService<IRemoteWatcher>(), sp.GetRequiredService<PlaceholdersService>(), sp.GetRequiredService<ILogger<RemoteWatcher>>())
-			)
-			.AddScoped<RemoteWatcherFactory>()
+			.AddScoped<IRemoteReadWriteService, LocalRemoteReadWriteService>()
+			.AddScoped<IRemoteReadService>((sp) => sp.GetRequiredService<IRemoteReadWriteService>())
+			.AddScoped<IRemoteWatcher, LocalRemoteWatcher>()
+			.AddScoped<PlaceholdersService>()
+			.AddScoped<ClientWatcher>()
+			.AddScoped<RemoteWatcher>()
 
 			// Shell
 			.AddCommonClassObjects()

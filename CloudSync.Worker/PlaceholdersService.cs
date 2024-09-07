@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Interop;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using PrimalZed.CloudSync.Helpers;
@@ -7,14 +8,16 @@ using Vanara.PInvoke;
 
 namespace PrimalZed.CloudSync;
 public class PlaceholdersService(
+	ISyncProviderContextAccessor contextAccessor,
 	IRemoteReadWriteService remoteService,
 	ILogger<PlaceholdersService> logger
 ) {
 	private readonly ILogger _logger = logger;
+	private string rootDirectory => contextAccessor.Context.RootDirectory;
 	private readonly FileEqualityComparer _fileComparer = new ();
 	private readonly DirectoryEqualityComparer _directoryComparer = new ();
 
-	public void CreateBulk(string rootDirectory, string subpath) {
+	public void CreateBulk(string subpath) {
 		using var filePlaceholderCreateInfos = remoteService.EnumerateFiles(subpath)
 			.Select(GetFilePlaceholderCreateInfo)
 			.ToDisposableArray();
@@ -42,25 +45,25 @@ public class PlaceholdersService(
 		).ThrowIfFailed("Create placeholders failed");
 
 		foreach (var remoteSubDirectory in remoteSubDirectories) {
-			CreateBulk(rootDirectory, remoteSubDirectory.RelativePath);
+			CreateBulk(remoteSubDirectory.RelativePath);
 		}
 	}
 
-	public Task CreateOrUpdateFile(string rootDirectory, string relativeFile) {
+	public Task CreateOrUpdateFile(string relativeFile) {
 		var clientFile = Path.Join(rootDirectory, relativeFile);
 		return !File.Exists(clientFile)
-			? CreateFile(rootDirectory, relativeFile)
-			: UpdateFile(rootDirectory, relativeFile);
+			? CreateFile(relativeFile)
+			: UpdateFile(relativeFile);
 	}
 
-	public Task CreateOrUpdateDirectory(string rootDirectory, string relativeDirectory) {
+	public Task CreateOrUpdateDirectory(string relativeDirectory) {
 		var clientDirectory = Path.Join(rootDirectory, relativeDirectory);
 		return !Directory.Exists(clientDirectory)
-			? CreateDirectory(rootDirectory, relativeDirectory)
-			: UpdateDirectory(rootDirectory, relativeDirectory);
+			? CreateDirectory(relativeDirectory)
+			: UpdateDirectory(relativeDirectory);
 	}
 
-	public async Task CreateFile(string rootDirectory, string relativeFile) {
+	public async Task CreateFile(string relativeFile) {
 		var fileInfo = remoteService.GetFileInfo(relativeFile);
 		using var createInfo = new SafeCreateInfo(fileInfo, fileInfo.RelativePath);
 		CldApi.CfCreatePlaceholders(
@@ -72,7 +75,7 @@ public class PlaceholdersService(
 		).ThrowIfFailed("Create placeholder failed");
 	}
 
-	public async Task CreateDirectory(string rootDirectory, string relativeDirectory) {
+	public async Task CreateDirectory(string relativeDirectory) {
 		var directoryInfo = remoteService.GetDirectoryInfo(relativeDirectory);
 		using var createInfo = new SafeCreateInfo(directoryInfo, directoryInfo.RelativePath);
 		CldApi.CfCreatePlaceholders(
@@ -90,7 +93,7 @@ public class PlaceholdersService(
 	private SafeCreateInfo GetDirectoryPlaceholderCreateInfo(RemoteDirectoryInfo remoteDirectoryInfo) =>
 		new(remoteDirectoryInfo, remoteDirectoryInfo.RelativePath, onDemand: false);
 
-	public async Task UpdateFile(string rootDirectory, string relativeFile, bool force = false) {
+	public async Task UpdateFile(string relativeFile, bool force = false) {
 		var clientFile = Path.Join(rootDirectory, relativeFile);
 		if (!Path.Exists(clientFile)) {
 			_logger.LogDebug("Skip update; file does not exist {clientFile}", clientFile);
@@ -136,7 +139,7 @@ public class PlaceholdersService(
 		}
 	}
 
-	public Task UpdateDirectory(string rootDirectory, string relativeDirectory) {
+	public Task UpdateDirectory(string relativeDirectory) {
 		var clientDirectory = Path.Join(rootDirectory, relativeDirectory);
 		if (!Path.Exists(clientDirectory)) {
 			_logger.LogDebug("Skip update; directory does not exist {clientDirectory}", clientDirectory);
@@ -163,10 +166,10 @@ public class PlaceholdersService(
 		return Task.CompletedTask;
 	}
 
-	public async Task RenameFile(string rootDirectory, string oldRelativeFile, string newRelativeFile) {
+	public async Task RenameFile(string oldRelativeFile, string newRelativeFile) {
 		var oldClientFile = Path.Join(rootDirectory, oldRelativeFile);
 		if (!Path.Exists(oldClientFile) ) {
-			await CreateOrUpdateFile(rootDirectory, newRelativeFile);
+			await CreateOrUpdateFile(newRelativeFile);
 			return;
 		}
 		var newClientFile = Path.Join(rootDirectory, newRelativeFile);
@@ -175,10 +178,10 @@ public class PlaceholdersService(
 		CloudFilter.SetInSyncState(newClientFile);
 	}
 
-	public async Task RenameDirectory(string rootDirectory, string oldRelativePath, string newRelativePath) {
+	public async Task RenameDirectory(string oldRelativePath, string newRelativePath) {
 		var oldClientDirectory = Path.Join(rootDirectory, oldRelativePath);
 		if (!Path.Exists(oldClientDirectory)) {
-			await CreateOrUpdateDirectory(rootDirectory, newRelativePath);
+			await CreateOrUpdateDirectory(newRelativePath);
 			return;
 		}
 		var newClientDirectory = Path.Join(rootDirectory, newRelativePath);
@@ -187,7 +190,7 @@ public class PlaceholdersService(
 		CloudFilter.SetInSyncState(newClientDirectory);
 	}
 
-	public void DeleteBulk(string rootDirectory, string relativeDirectory) {
+	public void DeleteBulk(string relativeDirectory) {
 		var clientDirectory = Path.Join(rootDirectory, relativeDirectory);
 		var clientSubDirectories = Directory.EnumerateDirectories(clientDirectory);
 		foreach (var clientSubDirectory in clientSubDirectories) {
@@ -200,7 +203,7 @@ public class PlaceholdersService(
 		}
 	}
 
-	public void Delete(string rootDirectory, string relativePath) {
+	public void Delete(string relativePath) {
 		var clientPath = Path.Join(rootDirectory, relativePath);
 		if (!Path.Exists(clientPath)) {
 			return;
