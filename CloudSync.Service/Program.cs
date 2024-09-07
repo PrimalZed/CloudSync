@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using PrimalZed.CloudSync.Logging;
 using PrimalZed.CloudSync.DependencyInjection;
 using PrimalZed.CloudSync;
 
@@ -13,7 +12,6 @@ builder.Services
 	//.AddSingleton<EventLogRegistrar>()
 
 	.AddHostedService<SyncProviderWorker>()
-	.AddHostedService<PipeWorker>()
 	.AddHostedService<ShellWorker>();
 	//.AddHostedService<TestWorker>();
 	// TODO: Register EventLog source: needs admin?

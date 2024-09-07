@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.IO;
-using PrimalZed.CloudSync.Pipes;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using PrimalZed.CloudSync.Remote.Local;
 using PrimalZed.CloudSync.Shell;
@@ -34,7 +32,6 @@ public static class ServiceCollectionExtensions {
 			.AddTransient<IRemoteWatcher, LocalRemoteWatcher>()
 			.AddSingleton<PlaceholdersService>()
 			.AddSingleton<SyncProvider>()
-			.AddKeyedSingleton("registrar", (sp, key) => new PipeServer(PipeNames.SYNC_ROOT_REGISTRAR, 3, sp.GetRequiredService<ILogger<PipeServer>>()))
 			.AddSingleton<SyncRootRegistrar>()
 			.AddSingleton<SyncProviderPool>()
 			.AddTransient<ClientWatcher>()

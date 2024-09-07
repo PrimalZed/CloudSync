@@ -10,6 +10,7 @@ builder.Services.AddCloudSyncWorker();
 
 builder.Services
 	.AddHostedService<SyncProviderWorker>()
+	//.AddHostedService<ShellWorker>()
 	.AddSingleton<SyncRootViewModel>()
 	.AddHostedService<AppService>();
 
