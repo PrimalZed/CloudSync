@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using PrimalZed.CloudSync.Commands;
 using PrimalZed.CloudSync.Configuration;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Windows.Security.Cryptography;
 using Windows.Storage;
@@ -54,6 +55,14 @@ public class SyncRootRegistrar(
 	public void Unregister(string accountId) {
 		var id = $"{providerOptions.Value.ProviderId}!{WindowsIdentity.GetCurrent().User}!{accountId}";
 		logger.LogDebug("Unregistering {syncRootId}", id);
-		StorageProviderSyncRootManager.Unregister(id);
+		try {
+			StorageProviderSyncRootManager.Unregister(id);
+		}
+		catch (COMException ex) when (ex.HResult == -2147023728) {
+			logger.LogWarning(ex, "Sync root not found");
+		}
+		catch (Exception ex) {
+			logger.LogError(ex, "Unregister sync root failed");
+		}
 	}
 }

@@ -10,14 +10,14 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Logging.AddEventLog(options => options.SourceName = builder.Configuration.GetValue<string>("Logging:EventLog:SourceName"));
 builder.Services
 	.AddCloudSyncWorker()
-	.AddSingleton<EventLogRegistrar>()
+	//.AddSingleton<EventLogRegistrar>()
 
 	.AddHostedService<SyncProviderWorker>()
 	.AddHostedService<PipeWorker>()
-  .AddHostedService<ShellWorker>()
+	.AddHostedService<ShellWorker>();
 	//.AddHostedService<TestWorker>();
 	// TODO: Register EventLog source: needs admin?
-	.AddWindowsService();
+	//.AddWindowsService();
 var host = builder.Build();
 
 await host.RunAsync();

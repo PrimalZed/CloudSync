@@ -47,7 +47,7 @@ public sealed class PipeWorker : BackgroundService {
 
 				// Sends to all pipe server instances, not just the one that sent this message
 				await _pipeServer.SendMessage("Registered");
-				_syncProviderPool.Start(registerCommand);
+				_syncProviderPool.Start(registerCommand.Directory, (Windows.Storage.Provider.StorageProviderPopulationPolicy)registerCommand.PopulationPolicy);
 				break;
 			case UnregisterSyncRootCommand unregisterCommand:
 				_logger.LogDebug("Received unregister request {accountId} {directory}", unregisterCommand.AccountId, unregisterCommand.Directory);

@@ -4,12 +4,14 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:rescap5="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities/5"
+	xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:desktop3="http://schemas.microsoft.com/appx/manifest/desktop/windows10/3"
   xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:cloudfiles="http://schemas.microsoft.com/appx/manifest/cloudfiles/windows10"
   xmlns:cloudfiles2="http://schemas.microsoft.com/appx/manifest/cloudfiles/windows10/2"
-  IgnorableNamespaces="uap rescap desktop3 desktop6 cloudfiles cloudfiles2">
+  IgnorableNamespaces="uap rescap rescap5 desktop desktop3 desktop6 cloudfiles cloudfiles2">
 
   <Identity
     Name="com.primalzed.cloudsync"
@@ -31,68 +33,29 @@
     <Resource Language="x-generate"/>
   </Resources>
 
-  <Applications>
-    <Application Id="App"
+	<Applications>
+		<Application Id="App"
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
-       <uap:VisualElements
+			<uap:VisualElements
         DisplayName="Cloud Sync"
         Description="Cloud Sync Description"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
         Square44x44Logo="Images\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png" />
-        <uap:SplashScreen Image="Images\SplashScreen.png" />
-      </uap:VisualElements>
+				<uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png" />
+				<uap:SplashScreen Image="Images\SplashScreen.png" />
+			</uap:VisualElements>
 			<Extensions>
-				<!--<Extension Category="windows.backgroundTasks" EntryPoint="Tasks.SampleBackgroundTask">
-					<BackgroundTasks>
-						<Task Type="systemEvent" />
-						<Task Type="timer" />
-					</BackgroundTasks>
-				</Extension>
-				<Extension Category="windows.backgroundTasks" EntryPoint="Tasks.ServicingComplete">
-					<BackgroundTasks>
-						<Task Type="systemEvent"/>
-					</BackgroundTasks>
-				</Extension>-->
-				<desktop6:Extension Category="windows.service" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Service.exe">
-					<desktop6:Service Name="CloudSync" StartAccount="localSystem" StartupType="auto"/>
-				</desktop6:Extension>
-        <!--<cloudfiles:Extension Category="windows.cloudFiles">
-          <cloudfiles:CloudFiles>
-						<cloudfiles:CustomStateHandler Clsid="20000000-0000-0000-0000-000000000001"/>
-						<cloudfiles:ThumbnailProviderHandler Clsid="703e61b4-f4a4-4803-b824-9d23dad651bc"/>
-						<cloudfiles:ExtendedPropertyHandler Clsid="20000000-0000-0000-0000-000000000001"/>
-						<cloudfiles:BannersHandler Clsid="20000000-0000-0000-0000-000000000001"/>
-						<cloudfiles:CloudFilesContextMenus>
-              <cloudfiles:Verb Id="Test" Clsid="4a3c9b56-f075-4499-b4ee-ba4b88d1fe05"/>
-            </cloudfiles:CloudFilesContextMenus>
-						<cloudfiles:ContentUriSource Clsid="20000000-0000-0000-0000-000000000001"/>
-            <cloudfiles2:StorageProviderStatusUISourceFactory Clsid="d3252227-1396-40a5-bfe9-1fcc49333ab3"/>
-          </cloudfiles:CloudFiles>
-        </cloudfiles:Extension>
-        <com:Extension Category="windows.comServer">
-          <com:ComServer>
-            <com:ExeServer DisplayName="CloudSync Local Thumbnail Provider Handler" Executable="CloudSync\CloudSync.exe">
-              <com:Class Id="703e61b4-f4a4-4803-b824-9d23dad651bc" />
-            </com:ExeServer>
-            <com:ExeServer DisplayName="CloudSync Test Context Menu Command Handler" Executable="CloudSync\CloudSync.exe">
-              <com:Class Id="4a3c9b56-f075-4499-b4ee-ba4b88d1fe05" />
-            </com:ExeServer>
-            <com:ExeServer DisplayName="CloudSync Local Status UI Source Factory" Executable="CloudSync\CloudSync.exe">
-              <com:Class Id="d3252227-1396-40a5-bfe9-1fcc49333ab3" />
-            </com:ExeServer>
-          </com:ComServer>
-        </com:Extension>-->
-      </Extensions>
-    </Application>
-  </Applications>
-	
-  <Capabilities>
-    <Capability Name="internetClient" />
-		<rescap:Capability Name="localSystemServices" />
-		<rescap:Capability Name="packagedServices" />
+				<desktop:Extension Category="windows.startupTask" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Service.exe">
+					<desktop:StartupTask DisplayName="Cloud Sync" Enabled="true" TaskId="PrimalZed.CloudSync" rescap5:ImmediateRegistration="true" />
+				</desktop:Extension>
+			</Extensions>
+		</Application>
+	</Applications>
+
+	<Capabilities>
+		<Capability Name="internetClient" />
 		<rescap:Capability Name="runFullTrust" />
-  </Capabilities>
+	</Capabilities>
 </Package>

@@ -8,14 +8,14 @@ using PrimalZed.CloudSync.Remote.Local;
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services
 	.AddCloudSyncWorker()
-	.AddSingleton<IRemoteInfo, LocalRemoteInfo>()
-	.AddHostedService<SingleProcessWorker>();
+//.AddSingleton<IRemoteInfo, LocalRemoteInfo>()
+//.AddHostedService<SingleProcessWorker>()
 
 //.AddHostedService<PipeClientWorker>()
 //.AddHostedService<PipeServerWorker>()
 
-//.AddHostedService<SyncProviderWorker>()
-//.AddHostedService<PipeWorker>();
+.AddHostedService<SyncProviderWorker>()
+.AddHostedService<PipeWorker>();
 var host = builder.Build();
 
 await host.RunAsync();

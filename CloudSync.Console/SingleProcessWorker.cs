@@ -2,6 +2,7 @@
 using PrimalZed.CloudSync.Async;
 using PrimalZed.CloudSync.Commands;
 using Windows.Storage;
+using Windows.Storage.Provider;
 
 namespace PrimalZed.CloudSync;
 public class SingleProcessWorker(
@@ -15,12 +16,12 @@ public class SingleProcessWorker(
 			PopulationPolicy = PopulationPolicy.Full,
 		};
 		var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
-		syncRootRegistrar.Register(registerCommand, storageFolder);
-		syncProviderPool.Start(registerCommand);
+		//syncRootRegistrar.Register(registerCommand, storageFolder);
+		//syncProviderPool.Start(registerCommand.Directory, (StorageProviderPopulationPolicy)registerCommand.PopulationPolicy);
 
 		await stoppingToken;
 
-		await syncProviderPool.Stop(registerCommand.Directory);
-		syncRootRegistrar.Unregister(registerCommand.AccountId);
+		//await syncProviderPool.Stop(registerCommand.Directory);
+		//syncRootRegistrar.Unregister(registerCommand.AccountId);
 	}
 }
