@@ -25,7 +25,7 @@ public class SingleProcessWorker(
 
 		await stoppingToken;
 
-		await syncProviderPool.Stop(registerCommand.Directory);
-		syncRootRegistrar.Unregister(registerCommand.AccountId);
+		await syncProviderPool.Stop(syncRootInfo.Id);
+		syncRootRegistrar.Unregister(syncRootInfo.Id);
 	}
 }

@@ -3,14 +3,25 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PrimalZed.CloudSync;
 using PrimalZed.CloudSync.DependencyInjection;
+using PrimalZed.CloudSync.Remote.Local;
+using PrimalZed.CloudSync.Shell;
+using PrimalZed.CloudSync.Shell.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddCloudSyncWorker();
+builder.Services
+	.AddLocalRemoteServices()
+	.AddCloudSyncWorker();
+
+// Shell
+builder.Services
+	.AddCommonClassObjects()
+	.AddLocalClassObjects()
+	.AddSingleton<ShellRegistrar>();
+	//.AddHostedService<ShellWorker>();
 
 builder.Services
 	.AddHostedService<SyncProviderWorker>()
-	//.AddHostedService<ShellWorker>()
 	.AddSingleton<RegistrarViewModel>()
 	.AddHostedService<AppService>();
 

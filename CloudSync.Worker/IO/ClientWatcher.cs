@@ -42,6 +42,7 @@ public class ClientWatcher : IDisposable {
 				return;
 			}
 			_logger.LogDebug("{changeType} {path}", e.ChangeType, e.FullPath);
+			var relativePath = PathMapper.GetRelativePath(e.FullPath, _rootDirectory);
 			try {
 				if (fileInfo.Attributes.HasAllSyncFlags(SyncAttributes.PINNED | (int)FileAttributes.Offline)) {
 					CloudFilter.HydratePlaceholder(e.FullPath);
@@ -50,7 +51,6 @@ public class ClientWatcher : IDisposable {
 					fileInfo.Attributes.HasAnySyncFlag(SyncAttributes.UNPINNED)
 					&& !fileInfo.Attributes.HasFlag(FileAttributes.Offline)
 				) {
-					var relativePath = PathMapper.GetRelativePath(e.FullPath, _rootDirectory);
 					CloudFilter.DehydratePlaceholder(e.FullPath, relativePath, fileInfo.Length);
 				}
 			}
@@ -59,19 +59,23 @@ public class ClientWatcher : IDisposable {
 			}
 
 			if (fileInfo.Attributes.HasFlag(FileAttributes.Directory)) {
-				// await _serverService.UpdateDirectory(directory, e.FullPath);
+				//var directoryInfo = new DirectoryInfo(e.FullPath);
+				//await _serverService.UpdateDirectory(directoryInfo, relativePath);
 			}
 			else {
-				await _remoteService.UpdateFile(e.FullPath);
+				await _remoteService.UpdateFile(fileInfo, relativePath);
 			}
 		};
 		watcher.Created += async (object sender, FileSystemEventArgs e) => {
 			_logger.LogDebug("Created {path}", e.FullPath);
+			var relativePath = PathMapper.GetRelativePath(e.FullPath, _rootDirectory);
 			if (File.GetAttributes(e.FullPath).HasFlag(FileAttributes.Directory)) {
-				await _remoteService.CreateDirectory(e.FullPath);
+				var directoryInfo = new DirectoryInfo(e.FullPath);
+				await _remoteService.CreateDirectory(directoryInfo, relativePath);
 			}
 			else {
-				await _remoteService.CreateFile(e.FullPath);
+				var fileInfo = new FileInfo(e.FullPath);
+				await _remoteService.CreateFile(fileInfo, relativePath);
 			}
 		};
 		watcher.Error += (object sender, ErrorEventArgs e) => {

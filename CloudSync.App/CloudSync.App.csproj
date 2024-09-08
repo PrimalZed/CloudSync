@@ -28,6 +28,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CloudSync.Remote.Local\CloudSync.Remote.Local.csproj" />
+    <ProjectReference Include="..\CloudSync.Shell\CloudSync.Shell.csproj" />
     <ProjectReference Include="..\CloudSync.Worker\CloudSync.Worker.csproj" />
   </ItemGroup>
 </Project>

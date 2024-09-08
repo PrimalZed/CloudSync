@@ -1,10 +1,12 @@
-﻿namespace PrimalZed.CloudSync.Remote.Local;
+﻿using PrimalZed.CloudSync.Interop;
+using PrimalZed.CloudSync.Remote.Abstractions;
 
+namespace PrimalZed.CloudSync.Remote.Local;
 public interface ILocalContextAccessor {
 	LocalContext Context { get; }
 }
 
-public class LocalContextAccessor : ILocalContextAccessor {
+public class LocalContextAccessor : IRemoteContextSetter, ILocalContextAccessor {
 	private static readonly AsyncLocal<ContextHolder> _localContextCurrent = new();
 
 	/// <inheritdoc/>
@@ -13,14 +15,18 @@ public class LocalContextAccessor : ILocalContextAccessor {
 		set {
 			var holder = _localContextCurrent.Value;
 			if (holder != null) {
-				// Clear current SyncProviderContext trapped in the AsyncLocals, as its done.
+				// Clear current LocalContext trapped in the AsyncLocals, as its done.
 				holder.Context = null;
 			}
 
-			// Use an object indirection to hold the SyncProviderContext in the AsyncLocal,
+			// Use an object indirection to hold the LocalContext in the AsyncLocal,
 			// so it can be cleared in all ExecutionContexts when its cleared.
 			_localContextCurrent.Value = new ContextHolder { Context = value };
 		}
+	}
+
+	public void SetRemoteContext(byte[] contextBytes) {
+		Context = StructBytes.FromBytes<LocalContext>(contextBytes);
 	}
 
 	private sealed class ContextHolder {

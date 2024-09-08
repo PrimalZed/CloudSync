@@ -4,7 +4,6 @@ using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.Interop;
-using PrimalZed.CloudSync.Remote.Local;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Windows.Security.Cryptography;

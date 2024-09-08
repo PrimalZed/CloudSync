@@ -2,14 +2,15 @@
 using Microsoft.Extensions.Hosting;
 using PrimalZed.CloudSync;
 using PrimalZed.CloudSync.DependencyInjection;
+using PrimalZed.CloudSync.Remote.Local;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services
+	.AddLocalRemoteServices()
 	.AddCloudSyncWorker()
-//.AddSingleton<IRemoteInfo, LocalRemoteInfo>()
-//.AddHostedService<SingleProcessWorker>()
+	.AddHostedService<SingleProcessWorker>();
 
-.AddHostedService<SyncProviderWorker>();
+//.AddHostedService<SyncProviderWorker>();
 var host = builder.Build();
 
 await host.RunAsync();

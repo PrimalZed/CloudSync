@@ -2,8 +2,7 @@
 using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
-using PrimalZed.CloudSync.Interop;
-using PrimalZed.CloudSync.Remote.Local;
+using PrimalZed.CloudSync.Remote.Abstractions;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Vanara.PInvoke;
 using Windows.Storage.Provider;
@@ -55,9 +54,11 @@ public class SyncProviderPool(
 		};
 		switch (contextAccessor.Context.RemoteKind) {
 			case RemoteKind.Local:
-				var localContextAccessor = scope.ServiceProvider.GetRequiredService<LocalContextAccessor>();
-				localContextAccessor.Context = StructBytes.FromBytes<LocalContext>(syncRootInfo.Context.ToArray());
+				var remoteContextSetter = scope.ServiceProvider.GetRequiredService<IRemoteContextSetter>();
+				remoteContextSetter.SetRemoteContext(syncRootInfo.Context.ToArray());
 				break;
+			case RemoteKind.Sftp:
+				throw new NotImplementedException();
 		}
 
 		var syncProvider = scope.ServiceProvider.GetRequiredService<SyncProvider>();
