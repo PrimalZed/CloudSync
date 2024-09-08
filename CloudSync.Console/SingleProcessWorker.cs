@@ -10,17 +10,17 @@ public class SingleProcessWorker(
 ) : BackgroundService {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 		var registerCommand = new RegisterSyncRootCommand {
-			AccountId = @"Local!C:\SyncTestServer",
+			AccountId = @"Local!C:|SyncTestServer",
 			Directory = @"C:\SyncTestClient",
 			PopulationPolicy = PopulationPolicy.Full,
 		};
 		var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
-		//syncRootRegistrar.Register(registerCommand, storageFolder);
-		//syncProviderPool.Start(registerCommand.Directory, (StorageProviderPopulationPolicy)registerCommand.PopulationPolicy);
+		var id = syncRootRegistrar.Register(registerCommand, storageFolder);
+		syncProviderPool.Start(id, registerCommand.Directory, registerCommand.PopulationPolicy);
 
 		await stoppingToken;
 
-		//await syncProviderPool.Stop(registerCommand.Directory);
-		//syncRootRegistrar.Unregister(registerCommand.AccountId);
+		await syncProviderPool.Stop(registerCommand.Directory);
+		syncRootRegistrar.Unregister(registerCommand.AccountId);
 	}
 }
