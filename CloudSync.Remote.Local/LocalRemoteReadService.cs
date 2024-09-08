@@ -6,18 +6,19 @@ using PrimalZed.CloudSync.Abstractions;
 namespace PrimalZed.CloudSync.Remote.Local;
 public class LocalRemoteReadService(
 	ISyncProviderContextAccessor contextAccessor,
+	ILocalContextAccessor localContextAccessor,
 	ILogger<LocalRemoteReadService> logger
 ) : IRemoteReadService {
 	protected readonly SyncProviderContext _context = contextAccessor.Context;
-	protected string remoteDirectory => _context.GetRemoteDirectory();
+	protected readonly LocalContext _localContext = localContextAccessor.Context;
 
 	public bool Exists(string relativePath) {
-		var serverPath = Path.Join(remoteDirectory, relativePath);
+		var serverPath = Path.Join(_localContext.Directory, relativePath);
 		return Path.Exists(serverPath);
 	}
 
 	public bool IsDirectory(string relativePath) {
-		var serverPath = Path.Join(remoteDirectory, relativePath);
+		var serverPath = Path.Join(_localContext.Directory, relativePath);
 		return File.GetAttributes(serverPath).HasFlag(FileAttributes.Directory);
 	}
 
@@ -25,7 +26,7 @@ public class LocalRemoteReadService(
 		EnumerateDirectories(relativeDirectory, "*");
 
 	public IEnumerable<RemoteDirectoryInfo> EnumerateDirectories(string relativeDirectory, string pattern) =>
-		Directory.EnumerateDirectories(Path.Join(remoteDirectory, relativeDirectory), pattern)
+		Directory.EnumerateDirectories(Path.Join(_localContext.Directory, relativeDirectory), pattern)
 			.Select((directory) => new DirectoryInfo(directory))
 			.Select(GetRemoteDirectoryInfo)
 			.ToArray();
@@ -34,29 +35,29 @@ public class LocalRemoteReadService(
 		EnumerateFiles(relativeDirectory, "*");
 
 	public IEnumerable<RemoteFileInfo> EnumerateFiles(string relativeDirectory, string pattern) =>
-		Directory.EnumerateFiles(Path.Join(remoteDirectory, relativeDirectory), pattern)
+		Directory.EnumerateFiles(Path.Join(_localContext.Directory, relativeDirectory), pattern)
 			.Select((file) => new FileInfo(file))
 			.Select(GetRemoteFileInfo)
 			.ToArray();
 
 	public RemoteDirectoryInfo GetDirectoryInfo(string relativeDirectory) {
-		var directoryInfo = new DirectoryInfo(Path.Join(remoteDirectory, relativeDirectory));
+		var directoryInfo = new DirectoryInfo(Path.Join(_localContext.Directory, relativeDirectory));
 		return GetRemoteDirectoryInfo(directoryInfo);
 	}
 
 	public RemoteFileInfo GetFileInfo(string relativeFile) {
-		var fileInfo = new FileInfo(Path.Join(remoteDirectory, relativeFile));
+		var fileInfo = new FileInfo(Path.Join(_localContext.Directory, relativeFile));
 		return GetRemoteFileInfo(fileInfo);
 	}
 
 	public async Task<Stream> GetFileStream(string relativeFile) {
-		var serverFile = Path.Join(remoteDirectory, relativeFile);
+		var serverFile = Path.Join(_localContext.Directory, relativeFile);
 		var fs = await FileHelper.WaitUntilUnlocked(() => File.OpenRead(serverFile), logger);
 		return fs;
 	}
 
 	internal string GetRelativePath(string serverPath) =>
-		PathMapper.GetRelativePath(serverPath, remoteDirectory);
+		PathMapper.GetRelativePath(serverPath, _localContext.Directory);
 
 	private RemoteDirectoryInfo GetRemoteDirectoryInfo(DirectoryInfo directoryInfo) =>
 		new() {

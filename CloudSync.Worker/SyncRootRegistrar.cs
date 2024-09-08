@@ -3,6 +3,8 @@ using Microsoft.Extensions.Options;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
 using PrimalZed.CloudSync.Configuration;
+using PrimalZed.CloudSync.Interop;
+using PrimalZed.CloudSync.Remote.Local;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Windows.Security.Cryptography;
@@ -28,7 +30,7 @@ public class SyncRootRegistrar(
 	public bool IsRegistered(string id) =>
 		StorageProviderSyncRootManager.GetCurrentSyncRoots().Any((x) => x.Id == id);
 
-	public string Register(RegisterSyncRootCommand command, IStorageFolder directory) {
+	public StorageProviderSyncRootInfo Register<T>(RegisterSyncRootCommand command, IStorageFolder directory, T context) where T : struct {
 		// Stage 1: Setup
 		//--------------------------------------------------------------------------------------------
 		// The client folder (syncroot) must be indexed in order for states to properly display
@@ -40,6 +42,7 @@ public class SyncRootRegistrar(
 			logger.LogWarning("Unexpectedly already registered {syncRootId}", id);
 			Unregister(command.AccountId);
 		}
+		var contextBytes = StructBytes.ToBytes(context);
 		var info = new StorageProviderSyncRootInfo {
 			Id = id,
 			Path = directory,
@@ -54,14 +57,14 @@ public class SyncRootRegistrar(
 			Version = "1.0.0",
 			// HardlinkPolicy = StorageProviderHardlinkPolicy.None,
 			// RecycleBinUri = new Uri(""),
-			Context = CryptographicBuffer.ConvertStringToBinary($"Local directory {command.Directory}", BinaryStringEncoding.Utf8),
+			Context = CryptographicBuffer.CreateFromByteArray(contextBytes),
 		};
 		// rootInfo.StorageProviderItemPropertyDefinitions.Add()
 
 		logger.LogDebug("Registering {syncRootId}", id);
 		StorageProviderSyncRootManager.Register(info);
 
-		return id;
+		return info;
 	}
 
 	public void Unregister(string id) {

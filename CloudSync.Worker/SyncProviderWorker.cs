@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using PrimalZed.CloudSync.Async;
-using PrimalZed.CloudSync.Commands;
 using PrimalZed.CloudSync.Configuration;
 using Windows.Storage.Provider;
 
@@ -19,16 +18,16 @@ public class SyncProviderWorker(
 	}
 
 	private void ConnectAll() {
-		var syncRoots = StorageProviderSyncRootManager.GetCurrentSyncRoots()
+		var syncRootsInfos = StorageProviderSyncRootManager.GetCurrentSyncRoots()
 			.Where(x => x.Id.StartsWith($"{providerOptions.Value.ProviderId}!"))
 			.ToArray();
 
-		foreach (var syncRoot in syncRoots) {
-			if (pool.Has(syncRoot.Path.Path)) {
+		foreach (var syncRootInfo in syncRootsInfos) {
+			if (pool.Has(syncRootInfo.Id)) {
 				continue;
 			}
 			
-			pool.Start(syncRoot.Id, syncRoot.Path.Path, (PopulationPolicy)syncRoot.PopulationPolicy);
+			pool.Start(syncRootInfo);
 		}
 	}
 }

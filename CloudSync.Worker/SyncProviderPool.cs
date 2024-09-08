@@ -2,6 +2,11 @@
 using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
+using PrimalZed.CloudSync.Interop;
+using PrimalZed.CloudSync.Remote.Local;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Vanara.PInvoke;
+using Windows.Storage.Provider;
 
 namespace PrimalZed.CloudSync;
 public class SyncProviderPool(
@@ -11,25 +16,20 @@ public class SyncProviderPool(
 	private readonly Dictionary<string, CancellableThread> _threads = [];
 	private bool _stopping = false;
 
-	public void Start(string syncRootId, string rootDirectory, PopulationPolicy populationPolicy) {
+	public void Start(StorageProviderSyncRootInfo syncRootInfo) {
 		if (_stopping) {
 			return;
 		}
-		var context = new SyncProviderContext {
-			Id = syncRootId,
-			RootDirectory = rootDirectory,
-			PopulationPolicy = populationPolicy,
-		};
-		var thread = new CancellableThread((CancellationToken cancellation) => Run(context, cancellation), logger);
+		var thread = new CancellableThread((CancellationToken cancellation) => Run(syncRootInfo, cancellation), logger);
 		thread.Stopped += (object? sender, EventArgs e) => {
-			_threads.Remove(rootDirectory);
+			_threads.Remove(syncRootInfo.Id);
 			(sender as CancellableThread)?.Dispose();
 		};
 		thread.Start();
-		_threads.Add(rootDirectory, thread);
+		_threads.Add(syncRootInfo.Id, thread);
 	}
 
-	public bool Has(string rootDirectory) => _threads.ContainsKey(rootDirectory);
+	public bool Has(string id) => _threads.ContainsKey(id);
 
 	public async Task StopAll() {
 		_stopping = true;
@@ -38,17 +38,27 @@ public class SyncProviderPool(
 		await Task.WhenAll(stopTasks);
 	}
 
-	public async Task Stop(string rootDirectory) {
-		if (!_threads.TryGetValue(rootDirectory, out var thread)) {
+	public async Task Stop(string id) {
+		if (!_threads.TryGetValue(id, out var thread)) {
 			return;
 		}
 		await thread.Stop();
 	}
 
-	private async Task Run(SyncProviderContext context, CancellationToken cancellation) {
+	private async Task Run(StorageProviderSyncRootInfo syncRootInfo, CancellationToken cancellation) {
 		using var scope = scopeFactory.CreateScope();
 		var contextAccessor = scope.ServiceProvider.GetRequiredService<SyncProviderContextAccessor>();
-		contextAccessor.Context = context;
+		contextAccessor.Context = new SyncProviderContext {
+			Id = syncRootInfo.Id,
+			RootDirectory = syncRootInfo.Path.Path,
+			PopulationPolicy = (PopulationPolicy)syncRootInfo.PopulationPolicy,
+		};
+		switch (contextAccessor.Context.RemoteKind) {
+			case RemoteKind.Local:
+				var localContextAccessor = scope.ServiceProvider.GetRequiredService<LocalContextAccessor>();
+				localContextAccessor.Context = StructBytes.FromBytes<LocalContext>(syncRootInfo.Context.ToArray());
+				break;
+		}
 
 		var syncProvider = scope.ServiceProvider.GetRequiredService<SyncProvider>();
 		await syncProvider.Run(cancellation);

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.IO;
@@ -21,6 +20,8 @@ public static class ServiceCollectionExtensions {
 			.AddSingleton<SyncProviderPool>()
 			.AddSingleton<SyncProviderContextAccessor>()
 			.AddSingleton<ISyncProviderContextAccessor>((sp) => sp.GetRequiredService<SyncProviderContextAccessor>())
+			.AddSingleton<LocalContextAccessor>()
+			.AddSingleton<ILocalContextAccessor>((sp) => sp.GetRequiredService<LocalContextAccessor>())
 
 			// Sync Provider services
 			.AddScoped<SyncProvider>()

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
+using PrimalZed.CloudSync.Remote.Local;
 using Windows.Storage;
 
 namespace CloudSync.App;
@@ -37,8 +38,12 @@ public partial class RegistrarViewModel(
 				PopulationPolicy = PopulationPolicy.Full,
 			};
 			var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
-			var id = registrar.Register(registerCommand, storageFolder);
-			syncProviderPool.Start(id, registerCommand.Directory, registerCommand.PopulationPolicy);
+			var localContext = new LocalContext {
+				EnableDeleteDirectoryWhenEmpty = true,
+				Directory = @"C:\SyncTestServer",
+			};
+			var info = registrar.Register(registerCommand, storageFolder, localContext);
+			syncProviderPool.Start(info);
 		}
 		catch (Exception ex) {
 			logger.LogError(ex, "Could not register");
@@ -57,7 +62,7 @@ public partial class RegistrarViewModel(
 		UnregisterCommand.NotifyCanExecuteChanged();
 		Error = null;
 		try {
-			await syncProviderPool.Stop(syncRoot.Directory);
+			await syncProviderPool.Stop(syncRoot.Id);
 			registrar.Unregister(syncRoot.Id);
 		}
 		catch (Exception ex) {

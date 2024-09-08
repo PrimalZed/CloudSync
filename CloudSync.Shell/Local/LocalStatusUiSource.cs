@@ -8,7 +8,9 @@ namespace PrimalZed.CloudSync.Shell.Local;
 /// <see href="https://learn.microsoft.com/en-us/uwp/api/windows.storage.provider.istorageproviderstatusuisource#windows-requirements">Windows 11 Insider Preview only</see>
 /// </remarks>
 public class LocalStatusUiSource : IStorageProviderStatusUISource {
+#pragma warning disable CS0067 // event is never used
 	public event TypedEventHandler<IStorageProviderStatusUISource, object>? StatusUIChanged;
+#pragma warning restore CS0067
 
 	public StorageProviderStatusUI GetStatusUI() {
 		return new StorageProviderStatusUI {

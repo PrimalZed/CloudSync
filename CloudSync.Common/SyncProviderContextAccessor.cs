@@ -2,7 +2,7 @@
 
 namespace PrimalZed.CloudSync; 
 public class SyncProviderContextAccessor : ISyncProviderContextAccessor {
-	private static readonly AsyncLocal<ContextHolder> _syncProviderContextCurrent = new AsyncLocal<ContextHolder>();
+	private static readonly AsyncLocal<ContextHolder> _syncProviderContextCurrent = new();
 
 	/// <inheritdoc/>
 	public SyncProviderContext Context {

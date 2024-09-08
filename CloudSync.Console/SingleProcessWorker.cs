@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using PrimalZed.CloudSync.Async;
 using PrimalZed.CloudSync.Commands;
+using PrimalZed.CloudSync.Remote.Local;
 using Windows.Storage;
 
 namespace PrimalZed.CloudSync;
@@ -15,8 +16,12 @@ public class SingleProcessWorker(
 			PopulationPolicy = PopulationPolicy.Full,
 		};
 		var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
-		var id = syncRootRegistrar.Register(registerCommand, storageFolder);
-		syncProviderPool.Start(id, registerCommand.Directory, registerCommand.PopulationPolicy);
+		var localContext = new LocalContext {
+			Directory = @"C:\SyncTestServer",
+			EnableDeleteDirectoryWhenEmpty = true,
+		};
+		var syncRootInfo = syncRootRegistrar.Register(registerCommand, storageFolder, localContext);
+		syncProviderPool.Start(syncRootInfo);
 
 		await stoppingToken;
 
