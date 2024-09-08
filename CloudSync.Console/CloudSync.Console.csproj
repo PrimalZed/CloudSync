@@ -11,7 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CloudSync.Management\CloudSync.Management.csproj" />
     <ProjectReference Include="..\CloudSync.Worker\CloudSync.Worker.csproj" />
   </ItemGroup>
 

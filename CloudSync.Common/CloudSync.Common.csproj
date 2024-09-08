@@ -11,8 +11,4 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\CloudSync.Common.Abstractions\CloudSync.Common.Abstractions.csproj" />
-  </ItemGroup>
-
 </Project>
