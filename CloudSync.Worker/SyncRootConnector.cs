@@ -192,7 +192,7 @@ public sealed class SyncRootConnector(
 		}
 		try {
 			if (remoteService.IsDirectory(relativePath)) {
-				// serverService.DeleteDirectory(clientPath);
+				remoteService.DeleteDirectory(relativePath);
 			}
 			else {
 				remoteService.DeleteFile(relativePath);

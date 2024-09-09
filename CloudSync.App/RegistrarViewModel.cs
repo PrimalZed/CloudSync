@@ -39,7 +39,6 @@ public partial class RegistrarViewModel(
 			};
 			var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
 			var localContext = new LocalContext {
-				EnableDeleteDirectoryWhenEmpty = true,
 				Directory = @"C:\SyncTestServer",
 			};
 			var info = registrar.Register(registerCommand, storageFolder, localContext);

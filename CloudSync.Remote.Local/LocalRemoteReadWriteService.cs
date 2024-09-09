@@ -109,26 +109,11 @@ public class LocalRemoteReadWriteService(
 		var serverFile = Path.Join(_context.Directory, relativeFile);
 		logger.LogDebug("Delete File {file}", serverFile);
 		File.Delete(serverFile);
-		DeleteDirectoryIfEmpty(Path.GetDirectoryName(serverFile)!);
 	}
 
 	public void DeleteDirectory(string relativeDirectory) {
 		var serverDirectory = Path.Join(_context.Directory, relativeDirectory);
 		logger.LogDebug("Delete Directory {directory}", serverDirectory);
 		Directory.Delete(serverDirectory, recursive: true);
-		DeleteDirectoryIfEmpty(Path.GetDirectoryName(serverDirectory)!);
-	}
-
-	private void DeleteDirectoryIfEmpty(string serverPath) {
-		if (!_context.EnableDeleteDirectoryWhenEmpty) {
-			return;
-		}
-		if (
-			serverPath == _context.Directory
-			|| Directory.EnumerateFileSystemEntries(serverPath).Any()
-		) {
-			return;
-		}
-		DeleteDirectory(serverPath);
 	}
 }

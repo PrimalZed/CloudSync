@@ -52,14 +52,8 @@ public class SyncProviderPool(
 			RootDirectory = syncRootInfo.Path.Path,
 			PopulationPolicy = (PopulationPolicy)syncRootInfo.PopulationPolicy,
 		};
-		switch (contextAccessor.Context.RemoteKind) {
-			case RemoteKind.Local:
-				var remoteContextSetter = scope.ServiceProvider.GetRequiredService<IRemoteContextSetter>();
-				remoteContextSetter.SetRemoteContext(syncRootInfo.Context.ToArray());
-				break;
-			case RemoteKind.Sftp:
-				throw new NotImplementedException();
-		}
+		var remoteContextSetter = scope.ServiceProvider.GetRequiredService<IRemoteContextSetter>();
+		remoteContextSetter.SetRemoteContext(syncRootInfo.Context.ToArray());
 
 		var syncProvider = scope.ServiceProvider.GetRequiredService<SyncProvider>();
 		await syncProvider.Run(cancellation);

@@ -11,4 +11,5 @@ public record SyncProviderContext {
 
 public enum RemoteKind {
 	Local = 1,
+	Sftp = 2,
 }

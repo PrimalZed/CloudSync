@@ -3,10 +3,12 @@ using Microsoft.Extensions.Hosting;
 using PrimalZed.CloudSync;
 using PrimalZed.CloudSync.DependencyInjection;
 using PrimalZed.CloudSync.Remote.Local;
+using PrimalZed.CloudSync.Remote.Sftp;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services
-	.AddLocalRemoteServices()
+	//.AddLocalRemoteServices()
+	.AddSftpRemoteServices()
 	.AddCloudSyncWorker()
 	.AddHostedService<SingleProcessWorker>();
 
