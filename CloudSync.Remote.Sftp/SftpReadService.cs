@@ -22,7 +22,7 @@ public class SftpReadService(
 
 	public IEnumerable<RemoteDirectoryInfo> EnumerateDirectories(string relativeDirectory, string pattern) {
 		if (pattern != "*") {
-			throw new NotSupportedException($"Does not support pattern other than \"*\": {pattern}");
+			throw new NotSupportedException($"Does not support pattern other than \"*\": {pattern}; try https://learn.microsoft.com/en-us/dotnet/core/extensions/file-globbing");
 		}
 		return client.ListDirectory(GetSftpPath(relativeDirectory))
 			.Where((sftpFile) => sftpFile.IsDirectory)
@@ -36,7 +36,7 @@ public class SftpReadService(
 
 	public IEnumerable<RemoteFileInfo> EnumerateFiles(string relativeDirectory, string pattern) {
 		if (pattern != "*") {
-			throw new NotSupportedException($"Does not support pattern other than \"*\": {pattern}");
+			throw new NotSupportedException($"Does not support pattern other than \"*\": {pattern}; try https://learn.microsoft.com/en-us/dotnet/core/extensions/file-globbing");
 		}
 		return client.ListDirectory(GetSftpPath(relativeDirectory))
 			.Where((sftpFile) => !sftpFile.IsDirectory && sftpFile.IsRegularFile)

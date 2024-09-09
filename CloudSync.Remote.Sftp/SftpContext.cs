@@ -12,4 +12,14 @@ public struct SftpContext {
 	public string Username;
 	[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 50)]
 	public string Password;
+	public int WatchPeriodSeconds;
+
+	public SftpContext() {
+		Directory = string.Empty;
+		Host = string.Empty;
+		Port = 22;
+		Username = string.Empty;
+		Password = string.Empty;
+		WatchPeriodSeconds = 10;
+	}
 }
