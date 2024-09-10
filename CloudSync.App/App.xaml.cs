@@ -6,7 +6,7 @@ using Microsoft.UI.Xaml.Input;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
-namespace CloudSync.App; 
+namespace PrimalZed.CloudSync.App; 
 /// <summary>
 /// Provides application-specific behavior to supplement the default Application class.
 /// </summary>
@@ -20,8 +20,8 @@ public partial class App : Application {
 	/// </summary>
 	public required IServiceProvider ServiceProvider { get; init; }
 	public bool Exiting { get; private set; } = false;
+	public Window? Window { get; private set; }
 	private TaskbarIcon? taskbarIcon;
-	private Window? window;
 
 	/// <summary>
 	/// Initializes the singleton application object.  This is the first line of authored code
@@ -37,19 +37,19 @@ public partial class App : Application {
 	/// <param name="args">Details about the launch request and process.</param>
 	protected override void OnLaunched(LaunchActivatedEventArgs args) {
 		InitializeTrayIcon();
-		window = new Window {
+		Window = new Window {
 			Content = new Frame {
 				Content = new MainPage(),
 			},
 		};
-		window.Closed += (sender, args) => {
+		Window.Closed += (sender, args) => {
 			if (Exiting) {
 				return;
 			}
 			args.Handled = true;
-			window.AppWindow.Hide();
+			Window.AppWindow.Hide();
 		};
-		window.Activate();
+		Window.Activate();
 	}
 
 	private void InitializeTrayIcon() {
@@ -64,17 +64,17 @@ public partial class App : Application {
 	}
 
 	private void ShowHideWindowCommand_ExecuteRequested(object? _, ExecuteRequestedEventArgs args) {
-		if (window!.Visible) {
-			window.Hide();
+		if (Window!.Visible) {
+			Window.Hide();
 		}
 		else {
-			window.Show();
+			Window.Show();
 		}
 	}
 
 	private void ExitApplicationCommand_ExecuteRequested(object? _, ExecuteRequestedEventArgs args) {
 		Exiting = true;
 		taskbarIcon?.Dispose();
-		window!.Close();
+		Window!.Close();
 	}
 }

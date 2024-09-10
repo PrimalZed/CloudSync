@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
-namespace CloudSync.App;
+namespace PrimalZed.CloudSync.App;
 public class AppService(IServiceProvider serviceProvider, ILogger<AppService> logger) : BackgroundService {
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
 		Application.Start(_ => {

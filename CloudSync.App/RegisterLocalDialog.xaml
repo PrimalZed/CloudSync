@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:converters="using:CommunityToolkit.WinUI.Converters"
+	xmlns:local="using:PrimalZed.CloudSync.App"
+	xmlns:viewModels="using:PrimalZed.CloudSync.App.ViewModels"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	mc:Ignorable="d"
+	x:Class="PrimalZed.CloudSync.App.RegisterLocalDialog"
+	d:DataContext="{d:DesignInstance Type=viewModels:LocalContextViewModel}"
+	Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+	Title="Register Sync with Local Directory"
+	PrimaryButtonText="Register"
+	PrimaryButtonCommand="{x:Bind DataContext.RegisterLocalCommand}"
+	IsPrimaryButtonEnabled="{x:Bind DataContext.CanRegister, Mode=OneWay}"
+	CloseButtonText="Cancel"
+	DefaultButton="Primary">
+	<ContentDialog.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceDictionary Source="Styles.xaml"/>
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
+	</ContentDialog.Resources>
+	<StackPanel>
+		<Button Content="Select Source Directory"
+			Click="SelectDirectory_Click"
+			Style="{x:Bind DataContext.DirectoryHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+		<TextBlock
+			Text="{x:Bind DataContext.Directory, Mode=OneWay}"
+			Style="{x:Bind DataContext.DirectoryHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+	</StackPanel>
+</ContentDialog>

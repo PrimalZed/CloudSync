@@ -30,7 +30,7 @@ public sealed class SftpWatcher(
 
 		using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 		while (!linkedTokenSource.Token.IsCancellationRequested) {
-			var foundFiles = IsPopulated(_context.Directory)
+			var foundFiles = IsHydrated(_context.Directory)
 				? FindFiles(_context.Directory)
 				: [];
 
@@ -65,20 +65,20 @@ public sealed class SftpWatcher(
 
 		var subFiles = sftpFiles
 			.Where((sftpFile) => sftpFile.IsDirectory && !_relativeDirectoryNames.Contains(sftpFile.Name))
-			.Where((sftpFile) => IsPopulated(sftpFile.FullName))
+			.Where((sftpFile) => IsHydrated(sftpFile.FullName))
 			.SelectMany((sftpFile) => FindFiles(sftpFile.FullName))
 			.ToArray();
 
 		var files = sftpFiles
-			.Where((sftpFile) => !sftpFile.IsDirectory && sftpFile.IsRegularFile)
-			.ToDictionary((sftpFile) => sftpFile.FullName, (sftpFile) => sftpFile.LastWriteTimeUtc);
+			.Where((sftpFile) => sftpFile.IsRegularFile || (sftpFile.IsDirectory && !_relativeDirectoryNames.Contains(sftpFile.Name) && IsHydrated(sftpFile.FullName)))
+			.ToDictionary((sftpFile) => sftpFile.FullName, (sftpFile) => sftpFile.IsDirectory ? DateTime.MaxValue : sftpFile.LastWriteTimeUtc);
 
 		return subFiles.Concat(files).ToDictionary();
 	}
 
-	private bool IsPopulated(string serverDirectory) {
-		var clientPath = PathMapper.ReplaceStart(serverDirectory, _context.Directory, _syncContext.RootDirectory);
-		return Directory.Exists(clientPath)
+	private bool IsHydrated(string serverPath) {
+		var clientPath = PathMapper.ReplaceStart(serverPath, _context.Directory, _syncContext.RootDirectory);
+		return Path.Exists(clientPath)
 			&& !File.GetAttributes(clientPath).HasAnySyncFlag(SyncAttributes.OFFLINE);
 	}
 

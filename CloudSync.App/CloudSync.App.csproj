@@ -6,7 +6,7 @@
     <!--Should be able to remove after new .NET SDK-->
 		<!--See https://github.com/CommunityToolkit/dotnet/issues/923#issuecomment-2314444048-->
     <WindowsSdkPackageVersion>10.0.22621.41</WindowsSdkPackageVersion>
-		<RootNamespace>CloudSync.App</RootNamespace>
+		<RootNamespace>PrimalZed.CloudSync.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) &gt;= 8">win-x86;win-x64;win-arm64</RuntimeIdentifiers>
@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CloudSync.Remote.Local\CloudSync.Remote.Local.csproj" />
+    <ProjectReference Include="..\CloudSync.Remote.Sftp\CloudSync.Remote.Sftp.csproj" />
     <ProjectReference Include="..\CloudSync.Shell\CloudSync.Shell.csproj" />
     <ProjectReference Include="..\CloudSync.Worker\CloudSync.Worker.csproj" />
   </ItemGroup>

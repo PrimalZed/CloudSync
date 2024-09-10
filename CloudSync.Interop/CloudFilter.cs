@@ -220,7 +220,7 @@ public static class CloudFilter {
 			new CldApi.CF_OPERATION_PARAMETERS.TRANSFERPLACEHOLDERS {
 				CompletionStatus = NTStatus.STATUS_SUCCESS,
 				EntriesProcessed = 0,
-				PlaceholderArray = createInfoArrayPointer,
+				PlaceholderArray = remoteInfos.Length != 0 ? createInfoArrayPointer : 0,
 				PlaceholderCount = Convert.ToUInt32(remoteInfos.Length),
 				PlaceholderTotalCount = Convert.ToUInt32(remoteInfos.Length),
 				Flags = CldApi.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAGS.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAG_DISABLE_ON_DEMAND_POPULATION,

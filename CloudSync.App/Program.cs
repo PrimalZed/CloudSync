@@ -1,16 +1,20 @@
-﻿using CloudSync.App;
+﻿
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PrimalZed.CloudSync;
+using PrimalZed.CloudSync.App;
+using PrimalZed.CloudSync.App.ViewModels;
 using PrimalZed.CloudSync.DependencyInjection;
 using PrimalZed.CloudSync.Remote.Local;
+using PrimalZed.CloudSync.Remote.Sftp;
 using PrimalZed.CloudSync.Shell;
 using PrimalZed.CloudSync.Shell.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services
-	.AddLocalRemoteServices()
+	//.AddLocalRemoteServices()
+	.AddSftpRemoteServices()
 	.AddCloudSyncWorker();
 
 // Shell
@@ -22,6 +26,8 @@ builder.Services
 
 builder.Services
 	.AddHostedService<SyncProviderWorker>()
+	.AddSingleton<LocalContextViewModel>()
+	.AddSingleton<SftpContextViewModel>()
 	.AddSingleton<RegistrarViewModel>()
 	.AddHostedService<AppService>();
 

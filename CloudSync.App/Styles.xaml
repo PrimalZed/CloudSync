@@ -1,0 +1,10 @@
+<ResourceDictionary
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:converters="using:CommunityToolkit.WinUI.Converters">
+	<Style x:Key="DefaultControlStyle" TargetType="Control"/>
+	<Style x:Key="ErrorControlStyle" TargetType="Control">
+		<Setter Property="BorderBrush" Value="DarkRed"/>
+	</Style>
+	<converters:BoolToObjectConverter x:Key="ValidationConverter" TrueValue="{StaticResource ErrorControlStyle}" FalseValue="{StaticResource DefaultControlStyle}"/>
+</ResourceDictionary>

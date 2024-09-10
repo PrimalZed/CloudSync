@@ -31,7 +31,7 @@ public sealed class SyncRootConnector(
 	private readonly CancellationTokenSource _disposeTokenSource = new ();
 	private readonly string _rootDirectory = contextAccessor.Context.RootDirectory;
 
-	public CF_CONNECTION_KEY Connect(CancellationToken stoppingToken = default) {
+	public CF_CONNECTION_KEY Connect() {
 		logger.LogDebug("Connecting sync provider to {syncRootPath}", _rootDirectory);
 		CloudFilter.ConnectSyncRoot(
 			_rootDirectory,

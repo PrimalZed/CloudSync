@@ -1,13 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using PrimalZed.CloudSync;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
-using PrimalZed.CloudSync.Remote.Local;
+using PrimalZed.CloudSync.Remote.Sftp;
 using Windows.Storage;
 
-namespace CloudSync.App;
+namespace PrimalZed.CloudSync.App.ViewModels;
 public partial class RegistrarViewModel(
 	SyncRootRegistrar registrar,
 	SyncProviderPool syncProviderPool,
@@ -26,22 +25,22 @@ public partial class RegistrarViewModel(
 	public bool IsReady => !IsPending;
 
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(IsReady))]
-	private async Task Register() {
+	private Task RegisterSftp(SftpContext context) =>
+		Register($"Sftp!{context.Host}:{context.Port}!{context.Directory.Replace("/", "|")}!{context.Username}", context);
+
+	public async Task Register<T>(string accountId, T context) where T : struct {
 		IsPending = true;
-		RegisterCommand.NotifyCanExecuteChanged();
+		RegisterSftpCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		Error = null;
 		try {
 			var registerCommand = new RegisterSyncRootCommand {
-				AccountId = @"Local!C:|SyncTestServer",
+				AccountId = accountId,
 				Directory = @"C:\SyncTestClient",
 				PopulationPolicy = PopulationPolicy.Full,
 			};
 			var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
-			var localContext = new LocalContext {
-				Directory = @"C:\SyncTestServer",
-			};
-			var info = registrar.Register(registerCommand, storageFolder, localContext);
+			var info = registrar.Register(registerCommand, storageFolder, context);
 			syncProviderPool.Start(info);
 		}
 		catch (Exception ex) {
@@ -49,7 +48,7 @@ public partial class RegistrarViewModel(
 			Error = $"Could not register: {ex.GetType()}, {ex.Message}, {ex.HResult}";
 		}
 		IsPending = false;
-		RegisterCommand.NotifyCanExecuteChanged();
+		RegisterSftpCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		UpdateSyncRoots();
 	}
@@ -57,7 +56,7 @@ public partial class RegistrarViewModel(
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(CanUnregister))]
 	private async Task Unregister(SyncRootInfo syncRoot) {
 		IsPending = true;
-		RegisterCommand.NotifyCanExecuteChanged();
+		RegisterSftpCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		Error = null;
 		try {
@@ -69,7 +68,7 @@ public partial class RegistrarViewModel(
 			Error = $"Could not register: {ex.GetType()}, {ex.Message}, {ex.HResult}";
 		}
 		IsPending = false;
-		RegisterCommand.NotifyCanExecuteChanged();
+		RegisterSftpCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		UpdateSyncRoots();
 	}

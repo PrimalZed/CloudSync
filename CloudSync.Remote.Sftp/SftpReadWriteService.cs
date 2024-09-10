@@ -23,7 +23,7 @@ public class SftpReadWriteService(
 		logger.LogDebug("Create File {relativeFile}", relativeFile);
 		PathMapper.EnsureSubDirectoriesExist(serverFile);
 
-		using (var sourceStream = sourceFileInfo.OpenRead()) {
+		using (var sourceStream = await FileHelper.WaitUntilUnlocked(sourceFileInfo.OpenRead, logger)) {
 			await Task.Factory.FromAsync(client.BeginUploadFile(sourceStream, serverFile), client.EndUploadFile);
 		}
 

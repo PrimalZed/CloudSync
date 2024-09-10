@@ -4,7 +4,7 @@ using PrimalZed.CloudSync.Async;
 using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Shell;
 
-namespace PrimalZed.CloudSync;
+namespace PrimalZed.CloudSync.App;
 public sealed class ShellWorker(
 	ShellRegistrar shellRegistrar,
 	ILogger<ShellWorker> logger

@@ -19,7 +19,7 @@ public class SyncProvider(
 		// Hook up callback methods (in this class) for transferring files between client and server
 		using var providerCancellation = new CancellationTokenSource();
 		using var providerDisposable = new Disposable(providerCancellation.Cancel);
-		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(providerCancellation.Token), syncProvider.Disconnect);
+		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(), syncProvider.Disconnect);
 		_ = Task.Run(() => syncProvider.ProcessQueueAsync(providerCancellation.Token));
 
 		// Create the placeholders in the client folder so the user sees something
