@@ -9,6 +9,8 @@ public interface ILocalContextAccessor {
 public class LocalContextAccessor : IRemoteContextSetter, ILocalContextAccessor {
 	private static readonly AsyncLocal<ContextHolder> _localContextCurrent = new();
 
+	public string RemoteKind => LocalConstants.KIND;
+
 	/// <inheritdoc/>
 	public LocalContext Context {
 		get => _localContextCurrent.Value?.Context! ?? throw new NullReferenceException();

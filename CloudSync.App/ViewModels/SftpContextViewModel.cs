@@ -90,7 +90,7 @@ public partial class SftpContextViewModel : ObservableValidator {
 
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(CanRegister))]
 	private Task RegisterSftp() =>
-		_registrarViewModel.Register($"Sftp!{SftpContext.Host}:{SftpContext.Port}!{SftpContext.Directory.Replace("/", "|")}!{SftpContext.Username}", SftpContext);
+		_registrarViewModel.Register($"{SftpConstants.KIND}!{SftpContext.Host}:{SftpContext.Port}!{SftpContext.Directory.Replace("/", "|")}!{SftpContext.Username}", SftpContext);
 
 	private void Registrar_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 		switch (e.PropertyName) {

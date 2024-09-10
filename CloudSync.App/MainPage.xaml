@@ -42,7 +42,7 @@
 			HorizontalContentAlignment="Center">
 			<DropDownButton.Flyout>
 				<MenuFlyout Placement="Bottom">
-					<MenuFlyoutItem Text="Local" Click="RegisterLocal_Click" IsEnabled="False"/>
+					<MenuFlyoutItem Text="Local" Click="RegisterLocal_Click"/>
 					<MenuFlyoutItem Text="SFTP" Click="RegisterSftp_Click"/>
 				</MenuFlyout>
 			</DropDownButton.Flyout>

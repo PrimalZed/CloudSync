@@ -13,7 +13,7 @@ using PrimalZed.CloudSync.Shell.DependencyInjection;
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services
-	//.AddLocalRemoteServices()
+	.AddLocalRemoteServices()
 	.AddSftpRemoteServices()
 	.AddCloudSyncWorker();
 

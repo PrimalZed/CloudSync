@@ -14,7 +14,7 @@ public sealed class SftpWatcher(
 	private readonly string[] _relativeDirectoryNames = [".", ".."];
 	private Dictionary<string, DateTime> _knownFiles = [];
 	private bool _running = false;
-	private CancellationTokenSource _cancellationTokenSource = new();
+	private readonly CancellationTokenSource _cancellationTokenSource = new();
 
 	public event RemoteCreateHandler? Created;
 	public event RemoteChangeHandler? Changed;

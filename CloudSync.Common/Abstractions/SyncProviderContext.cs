@@ -6,10 +6,5 @@ public record SyncProviderContext {
 	public required string RootDirectory { get; init; }
 	public required PopulationPolicy PopulationPolicy { get; init; }
 	public string AccountId => Id.Split('!', 3)[2];
-	public RemoteKind RemoteKind => Enum.Parse<RemoteKind>(AccountId.Split('!')[0]);
-}
-
-public enum RemoteKind {
-	Local = 1,
-	Sftp = 2,
+	public string RemoteKind => AccountId.Split('!')[0];
 }

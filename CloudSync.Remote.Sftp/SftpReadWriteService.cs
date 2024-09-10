@@ -3,7 +3,6 @@ using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
-using System.IO;
 
 namespace PrimalZed.CloudSync.Remote.Sftp;
 #pragma warning disable CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.

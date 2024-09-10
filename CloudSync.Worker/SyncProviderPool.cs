@@ -52,7 +52,8 @@ public class SyncProviderPool(
 			RootDirectory = syncRootInfo.Path.Path,
 			PopulationPolicy = (PopulationPolicy)syncRootInfo.PopulationPolicy,
 		};
-		var remoteContextSetter = scope.ServiceProvider.GetRequiredService<IRemoteContextSetter>();
+		var remoteContextSetter = scope.ServiceProvider.GetServices<IRemoteContextSetter>()
+			.Single((setter) => setter.RemoteKind == contextAccessor.Context.RemoteKind);
 		remoteContextSetter.SetRemoteContext(syncRootInfo.Context.ToArray());
 
 		var syncProvider = scope.ServiceProvider.GetRequiredService<SyncProvider>();

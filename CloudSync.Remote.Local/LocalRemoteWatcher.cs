@@ -1,13 +1,11 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using PrimalZed.CloudSync.Abstractions;
+using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Remote.Abstractions;
 
 namespace PrimalZed.CloudSync.Remote.Local;
 public sealed class LocalRemoteWatcher : IRemoteWatcher {
-	private readonly ISyncProviderContextAccessor _contextAccessor;
-	private readonly ILocalContextAccessor _localContextAccessor;
-	private readonly LocalRemoteReadService _readService;
+	private readonly LocalContext _context;
 	private readonly ILogger _logger;
 
 	private readonly Channel<FileSystemEventArgs> _channel =
@@ -19,25 +17,17 @@ public sealed class LocalRemoteWatcher : IRemoteWatcher {
 	private readonly FileSystemWatcher _watcher;
 
 	public LocalRemoteWatcher(
-		ISyncProviderContextAccessor contextAccessor,
 		ILocalContextAccessor localContextAccessor,
-		IRemoteReadService readService,
 		ILogger<LocalRemoteWatcher> logger
 	) {
-		_contextAccessor = contextAccessor;
-		_localContextAccessor = localContextAccessor;
-		if (readService is not LocalRemoteReadService localReadService) {
-			throw new ArgumentException($"Must be {nameof(LocalRemoteReadService)}", nameof(readService));
-		}
-		_readService = localReadService;
+		_context = localContextAccessor.Context;
 		_logger = logger;
 		
 		_watcher = CreateWatcher();
 	}
 
 	private FileSystemWatcher CreateWatcher() {
-		var remoteDirectory = _localContextAccessor.Context.Directory;
-		var watcher = new FileSystemWatcher(remoteDirectory) {
+		var watcher = new FileSystemWatcher(_context.Directory) {
 			IncludeSubdirectories = true,
 			NotifyFilter = NotifyFilters.FileName
 				| NotifyFilters.DirectoryName
@@ -71,15 +61,15 @@ public sealed class LocalRemoteWatcher : IRemoteWatcher {
 		while (!stoppingToken.IsCancellationRequested) {
 			var e = await _channel.Reader.ReadAsync(stoppingToken);
 			var task = e.ChangeType switch {
-				WatcherChangeTypes.Created => Created?.Invoke(_readService.GetRelativePath(e.FullPath)) ?? Task.CompletedTask,
-				WatcherChangeTypes.Changed => (e.ChangeType != WatcherChangeTypes.Changed || !_readService.Exists(_readService.GetRelativePath(e.FullPath)))
+				WatcherChangeTypes.Created => Created?.Invoke(PathMapper.GetRelativePath(e.FullPath, _context.Directory)) ?? Task.CompletedTask,
+				WatcherChangeTypes.Changed => (e.ChangeType != WatcherChangeTypes.Changed || !Path.Exists(e.FullPath))
 					? Task.CompletedTask
-					: Changed?.Invoke(_readService.GetRelativePath(e.FullPath)) ?? Task.CompletedTask,
+					: Changed?.Invoke(PathMapper.GetRelativePath(e.FullPath, _context.Directory)) ?? Task.CompletedTask,
 				WatcherChangeTypes.Renamed =>
 					e is RenamedEventArgs renamedArgs
-						? Renamed?.Invoke(_readService.GetRelativePath(renamedArgs.OldFullPath), _readService.GetRelativePath(renamedArgs.FullPath)) ?? Task.CompletedTask
+						? Renamed?.Invoke(PathMapper.GetRelativePath(renamedArgs.OldFullPath, _context.Directory), PathMapper.GetRelativePath(renamedArgs.FullPath, _context.Directory)) ?? Task.CompletedTask
 						: throw new Exception("Unexpected type"),
-				WatcherChangeTypes.Deleted => Deleted?.Invoke(_readService.GetRelativePath(e.FullPath)) ?? Task.CompletedTask,
+				WatcherChangeTypes.Deleted => Deleted?.Invoke(PathMapper.GetRelativePath(e.FullPath, _context.Directory)) ?? Task.CompletedTask,
 				_ => throw new NotImplementedException(),
 			};
 			await task;

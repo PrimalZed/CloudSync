@@ -9,6 +9,8 @@ public interface ISftpContextAccessor {
 public class SftpContextAccessor : IRemoteContextSetter, ISftpContextAccessor {
 	private static readonly AsyncLocal<ContextHolder> _sftpContextCurrent = new();
 
+	public string RemoteKind => SftpConstants.KIND;
+
 	/// <inheritdoc/>
 	public SftpContext Context {
 		get => _sftpContextCurrent.Value?.Context! ?? throw new NullReferenceException();

@@ -35,7 +35,7 @@ public partial class LocalContextViewModel : ObservableValidator {
 
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(CanRegister))]
 	private Task RegisterLocal() =>
-		_registrarViewModel.Register($"Local!{Directory.Replace(@"\", "|")}", LocalContext);
+		_registrarViewModel.Register($"{LocalConstants.KIND}!{Directory.Replace(@"\", "|")}", LocalContext);
 
 	private void LocalContextViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 		switch (e.PropertyName) {

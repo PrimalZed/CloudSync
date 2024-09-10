@@ -3,8 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Configuration;
 using PrimalZed.CloudSync.IO;
+using PrimalZed.CloudSync.Remote;
 
-namespace PrimalZed.CloudSync.DependencyInjection; 
+namespace PrimalZed.CloudSync.DependencyInjection;
 public static class ServiceCollectionExtensions {
 	public static IServiceCollection AddCloudSyncWorker(this IServiceCollection services) =>
 		services
@@ -18,6 +19,7 @@ public static class ServiceCollectionExtensions {
 			.AddSingleton<ISyncProviderContextAccessor>((sp) => sp.GetRequiredService<SyncProviderContextAccessor>())
 
 			// Sync Provider services
+			.AddRemoteFactories()
 			.AddScoped<SyncProvider>()
 			.AddScoped<SyncRootConnector>()
 			.AddScoped<SyncRootRegistrar>()
