@@ -11,7 +11,7 @@ public sealed class SftpWatcher(
 ) : IRemoteWatcher {
 	private readonly SyncProviderContext _syncContext = syncContextAccessor.Context;
 	private readonly SftpContext _context = contextAccessor.Context;
-	private readonly string[] _relativeDirectoryNames = [".", ".."];
+	private readonly string[] _relativeDirectoryNames = [".", "..", "#Recycle"];
 	private Dictionary<string, DateTime> _knownFiles = [];
 	private bool _running = false;
 	private readonly CancellationTokenSource _cancellationTokenSource = new();

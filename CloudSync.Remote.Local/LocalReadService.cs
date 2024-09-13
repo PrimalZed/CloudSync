@@ -3,9 +3,9 @@ using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Remote.Abstractions;
 
 namespace PrimalZed.CloudSync.Remote.Local;
-public class LocalRemoteReadService(
+public class LocalReadService(
 	ILocalContextAccessor contextAccessor,
-	ILogger<LocalRemoteReadService> logger
+	ILogger<LocalReadService> logger
 ) : IRemoteReadService {
 	protected readonly LocalContext _context = contextAccessor.Context;
 

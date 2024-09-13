@@ -4,7 +4,7 @@ using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Remote.Abstractions;
 
 namespace PrimalZed.CloudSync.Remote.Local;
-public sealed class LocalRemoteWatcher : IRemoteWatcher {
+public sealed class LocalWatcher : IRemoteWatcher {
 	private readonly LocalContext _context;
 	private readonly ILogger _logger;
 
@@ -16,9 +16,9 @@ public sealed class LocalRemoteWatcher : IRemoteWatcher {
 		);
 	private readonly FileSystemWatcher _watcher;
 
-	public LocalRemoteWatcher(
+	public LocalWatcher(
 		ILocalContextAccessor localContextAccessor,
-		ILogger<LocalRemoteWatcher> logger
+		ILogger<LocalWatcher> logger
 	) {
 		_context = localContextAccessor.Context;
 		_logger = logger;

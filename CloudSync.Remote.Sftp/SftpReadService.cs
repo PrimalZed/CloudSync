@@ -8,7 +8,7 @@ public class SftpReadService(
 	ISftpContextAccessor contextAccessor,
 	SftpClient client
 ) : IRemoteReadService {
-	protected readonly string[] _relativeDirectoryNames = [".", ".."];
+	protected readonly string[] _relativeDirectoryNames = [".", "..", "#Recycle"];
 	protected readonly SftpContext _context = contextAccessor.Context;
 
 	public bool Exists(string relativePath) =>

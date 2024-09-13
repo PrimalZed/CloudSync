@@ -3,10 +3,10 @@ using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Remote.Abstractions;
 
 namespace PrimalZed.CloudSync.Remote.Local;
-public class LocalRemoteReadWriteService(
+public class LocalReadWriteService(
 	ILocalContextAccessor contextAccessor,
-	ILogger<LocalRemoteReadWriteService> logger
-) : LocalRemoteReadService(contextAccessor, logger), IRemoteReadWriteService {
+	ILogger<LocalReadWriteService> logger
+) : LocalReadService(contextAccessor, logger), IRemoteReadWriteService {
 	private readonly FileEqualityComparer _fileComparer = new ();
 	private readonly DirectoryEqualityComparer _directoryComparer = new ();
 

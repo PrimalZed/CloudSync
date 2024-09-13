@@ -29,7 +29,7 @@ namespace PrimalZed.CloudSync.App {
 
 			// Open the picker for the user to pick a folder
 			StorageFolder folder = await folderPicker.PickSingleFolderAsync();
-			DataContext.Directory = folder.Path;
+			DataContext.Directory = folder?.Path ?? string.Empty;
 		}
 	}
 }

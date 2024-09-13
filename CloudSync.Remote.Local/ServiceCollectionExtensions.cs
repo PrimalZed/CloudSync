@@ -9,10 +9,10 @@ public static class ServiceCollectionExtensions {
 			.AddKeyedSingleton<IRemoteContextSetter>("local", (sp, key) => sp.GetRequiredService<LocalContextAccessor>())
 			.AddSingleton((sp) => sp.GetRequiredKeyedService<IRemoteContextSetter>("local"))
 			.AddSingleton<ILocalContextAccessor>((sp) => sp.GetRequiredService<LocalContextAccessor>())
-			.AddKeyedScoped<IRemoteReadWriteService, LocalRemoteReadWriteService>("local")
+			.AddKeyedScoped<IRemoteReadWriteService, LocalReadWriteService>("local")
 			.AddScoped((sp) => new LazyRemote<IRemoteReadWriteService>(() => sp.GetRequiredKeyedService<IRemoteReadWriteService>("local"), LocalConstants.KIND))
 			.AddKeyedScoped<IRemoteReadService>("local", (sp, key) => sp.GetRequiredService<IRemoteReadWriteService>())
 			.AddScoped((sp) => new LazyRemote<IRemoteReadService>(() => sp.GetRequiredKeyedService<IRemoteReadService>("local"), LocalConstants.KIND))
-			.AddKeyedScoped<IRemoteWatcher, LocalRemoteWatcher>("local")
+			.AddKeyedScoped<IRemoteWatcher, LocalWatcher>("local")
 			.AddScoped((sp) => new LazyRemote<IRemoteWatcher>(() => sp.GetRequiredKeyedService<IRemoteWatcher>("local"), LocalConstants.KIND));
 }
