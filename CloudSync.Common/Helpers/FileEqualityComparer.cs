@@ -23,9 +23,6 @@ public class FileEqualityComparer : IComparer<FileInfo>, IEqualityComparer<FileI
 	public int GetHashCode([DisallowNull] FileInfo obj) =>
 		HashCode.Combine(
 			obj.Length,
-			// ignore sync attributes
-			(int)obj.Attributes & ~SyncAttributes.ALL,
-			obj.CreationTimeUtc,
 			obj.LastWriteTimeUtc
 		);
 }

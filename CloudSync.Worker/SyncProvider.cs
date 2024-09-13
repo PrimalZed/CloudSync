@@ -8,6 +8,7 @@ using static Vanara.PInvoke.CldApi;
 namespace PrimalZed.CloudSync; 
 public class SyncProvider(
 	ISyncProviderContextAccessor contextAccessor,
+	TaskQueue taskQueue,
 	SyncRootConnector syncProvider,
 	PlaceholdersService placeholdersService,
 	ClientWatcher clientWatcher,
@@ -15,12 +16,11 @@ public class SyncProvider(
 	ILogger<SyncProvider> logger
 ) {
 	public async Task Run(CancellationToken cancellation) {
+		taskQueue.Start(cancellation);
+
 		logger.LogDebug("Connecting...");
 		// Hook up callback methods (in this class) for transferring files between client and server
-		using var providerCancellation = new CancellationTokenSource();
-		using var providerDisposable = new Disposable(providerCancellation.Cancel);
 		using var connectDisposable = new Disposable<CF_CONNECTION_KEY>(syncProvider.Connect(), syncProvider.Disconnect);
-		_ = Task.Run(() => syncProvider.ProcessQueueAsync(providerCancellation.Token));
 
 		// Create the placeholders in the client folder so the user sees something
 		if (contextAccessor.Context.PopulationPolicy == Commands.PopulationPolicy.AlwaysFull) {
@@ -39,10 +39,10 @@ public class SyncProvider(
 
 		// Run until SIGTERM
 		await cancellation;
+		logger.LogDebug("Stopping task queue...");
+		await taskQueue.Stop();
 
 		logger.LogDebug("Disconnecting...");
-		providerCancellation.Cancel();
-
 		// TODO: Only on uninstall (or not at all?)
 		//placeholdersService.DeleteBulk(directory);
 	}

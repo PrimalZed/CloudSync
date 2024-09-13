@@ -1,10 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Remote.Abstractions;
+using System.Threading.Channels;
 
 namespace PrimalZed.CloudSync.IO; 
 public sealed class RemoteWatcher(
 	IRemoteReadService remoteReadService,
 	IRemoteWatcher remoteWatcher,
+	ChannelWriter<Func<Task>> taskWriter,
+	FileLocker fileLocker,
 	PlaceholdersService placeholderService,
 	ILogger<RemoteWatcher> logger
 ) : IDisposable {
@@ -18,61 +21,74 @@ public sealed class RemoteWatcher(
 
 	private async Task HandleCreated(string relativePath) {
 		logger.LogDebug("Created {path}", relativePath);
-		try {
-			if (remoteReadService.IsDirectory(relativePath)) {
-				await placeholderService.CreateOrUpdateDirectory(relativePath);
+		await taskWriter.WriteAsync(async () => {
+			using var locker = await fileLocker.Lock(relativePath);
+			try {
+				if (remoteReadService.IsDirectory(relativePath)) {
+					await placeholderService.CreateOrUpdateDirectory(relativePath);
+				}
+				else {
+					await placeholderService.CreateOrUpdateFile(relativePath);
+				}
 			}
-			else {
-				await placeholderService.CreateOrUpdateFile(relativePath);
+			catch (Exception ex) {
+				logger.LogError(ex, "Handle Created failed");
 			}
-		}
-		catch (Exception ex) {
-			logger.LogError(ex, "Handle Created failed");
-		}
+		});
 	}
 
 	private async Task HandleChanged(string relativePath) {
 		logger.LogDebug("Changed {path}", relativePath);
-		try {
-			if (remoteReadService.IsDirectory(relativePath)) {
-				await placeholderService.UpdateDirectory(relativePath);
+		await taskWriter.WriteAsync(async () => {
+			using var locker = await fileLocker.Lock(relativePath);
+			try {
+				if (remoteReadService.IsDirectory(relativePath)) {
+					await placeholderService.UpdateDirectory(relativePath);
+				}
+				else {
+					await placeholderService.UpdateFile(relativePath);
+				}
 			}
-			else {
-				await placeholderService.UpdateFile(relativePath);
+			catch (Exception ex) {
+				logger.LogError(ex, "Handle Changed failed");
 			}
-		}
-		catch (Exception ex) {
-			logger.LogError(ex, "Handle Changed failed");
-		}
+		});
 	}
 
 	private async Task HandleRenamed(string oldRelativePath, string newRelativePath) {
 		// Brief pause to let client rename finish before reflecting it back
 		// await Task.Delay(1000);
 		logger.LogDebug("Changed {oldPath} -> {path}", oldRelativePath, newRelativePath);
-		try {
-			if (remoteReadService.IsDirectory(newRelativePath)) {
-				await placeholderService.RenameDirectory(oldRelativePath, newRelativePath);
+		await taskWriter.WriteAsync(async () => {
+			using var oldLocker = await fileLocker.Lock(oldRelativePath);
+			using var newLocker = await fileLocker.Lock(newRelativePath);
+			try {
+				if (remoteReadService.IsDirectory(newRelativePath)) {
+					await placeholderService.RenameDirectory(oldRelativePath, newRelativePath);
+				}
+				else {
+					await placeholderService.RenameFile(oldRelativePath, newRelativePath);
+				}
 			}
-			else {
-				await placeholderService.RenameFile(oldRelativePath, newRelativePath);
+			catch (Exception ex) {
+				logger.LogError(ex, "Rename placeholder failed");
 			}
-		}
-		catch (Exception ex) {
-			logger.LogError(ex, "Rename placeholder failed");
-		}
+		});
 	}
 
 	private async Task HandleDeleted(string relativePath) {
 		// Brief pause to let client rename finish before reflecting it back
 		// await Task.Delay(1000);
 		logger.LogDebug("Deleted {path}", relativePath);
-		try {
-			placeholderService.Delete(relativePath);
-		}
-		catch (Exception ex) {
-			logger.LogError(ex, "Delete placeholder failed");
-		}
+		await taskWriter.WriteAsync(async () => {
+			using var locker = await fileLocker.Lock(relativePath);
+			try {
+				placeholderService.Delete(relativePath);
+			}
+			catch (Exception ex) {
+				logger.LogError(ex, "Delete placeholder failed");
+			}
+		});
 	}
 
 	public void Dispose() {

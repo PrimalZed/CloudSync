@@ -110,12 +110,13 @@ Other options?
 [x] Delete server file -> ?
 [] Changes (create, update, rename, delete) while offline -> ?
 
+# Syncing
+* Uploading large files client->remote tends to break.
+  [] Pause remote watcher while uploading?
+  [] Uploading status to hold queue of uploading files?
+
 # Add/Remove sync root through app
-[] Install
-  [] Register sync root
-  [] Bulk load
-  [] Start service (background process or windows service?)
-  [] Service to sync changes since last time service ran (offline, stopped)
+[] Start
+  [] Sync changes since last time service ran (offline, stopped)
 [] Uninstall
-  [] Remove service
-  [] Unregister sync root
+  [] Unregister sync roots

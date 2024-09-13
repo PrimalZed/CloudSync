@@ -47,15 +47,15 @@ public class LocalReadWriteService(
 
 	private void CopyFile(FileInfo clientFileInfo, string serverFile) {
 		clientFileInfo.CopyTo(serverFile, overwrite: true);
-		var serverFileInfo = new FileInfo(serverFile) {
-			CreationTimeUtc = clientFileInfo.CreationTimeUtc,
-			LastWriteTimeUtc = clientFileInfo.LastWriteTimeUtc,
-			LastAccessTimeUtc = clientFileInfo.LastAccessTimeUtc,
-		};
-		serverFileInfo.Attributes = (FileAttributes)SyncAttributes.Take(
-			(int)clientFileInfo.Attributes,
-			(int)serverFileInfo.Attributes
-		);
+		//var serverFileInfo = new FileInfo(serverFile) {
+		//	CreationTimeUtc = clientFileInfo.CreationTimeUtc,
+		//	LastWriteTimeUtc = clientFileInfo.LastWriteTimeUtc,
+		//	LastAccessTimeUtc = clientFileInfo.LastAccessTimeUtc,
+		//};
+		//serverFileInfo.Attributes = (FileAttributes)SyncAttributes.Take(
+		//	(int)clientFileInfo.Attributes,
+		//	(int)serverFileInfo.Attributes
+		//);
 	}
 
 	public Task CreateDirectory(DirectoryInfo sourceDirectoryInfo, string relativeDirectory) {

@@ -19,16 +19,11 @@ public record RenameCompletionCallbackParameters : CallbackParameters {
 }
 public sealed class SyncRootConnector(
 	ISyncProviderContextAccessor contextAccessor,
+	ChannelWriter<Func<Task>> taskWriter,
+	FileLocker fileLocker,
 	IRemoteReadWriteService remoteService,
 	ILogger<SyncRootConnector> logger
-) : IDisposable {
-	private readonly Channel<Callback> _channel =
-		Channel.CreateUnbounded<Callback>(
-			new UnboundedChannelOptions {
-				SingleReader = true,
-			}
-		);
-	private readonly CancellationTokenSource _disposeTokenSource = new ();
+) {
 	private readonly string _rootDirectory = contextAccessor.Context.RootDirectory;
 
 	public CF_CONNECTION_KEY Connect() {
@@ -40,19 +35,17 @@ public sealed class SyncRootConnector(
 				FetchData = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) => 
 					FetchData(callbackInfo, callbackParameters),
 				OnCloseCompletion = OnCloseCompletion,
-				OnRenameCompletion = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) => 
-					_channel.Writer.WriteAsync(new Callback {
-						Type = CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION,
-						Info = callbackInfo,
-						Parameters = new RenameCompletionCallbackParameters {
-							SourcePath = callbackParameters.RenameCompletion.SourcePath,
-						},
-					}),
-				OnDeleteCompletion = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) =>
-					_channel.Writer.WriteAsync(new Callback {
-						Type = CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION,
-						Info = callbackInfo,
-					}),
+				OnRenameCompletion = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) => {
+					var volumeDosName = callbackInfo.VolumeDosName;
+					var oldPath = callbackParameters.RenameCompletion.SourcePath;
+					var newPath = callbackInfo.NormalizedPath;
+					taskWriter.TryWrite(() => OnRenameCompletion(volumeDosName, oldPath, newPath));
+				},
+				OnDeleteCompletion = (in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) => {
+					var volumeDosName = callbackInfo.VolumeDosName;
+					var path = callbackInfo.NormalizedPath;
+					taskWriter.TryWrite(() => OnDeleteCompletion(volumeDosName, path));
+				},
 			},
 			out var connectionKey
 		);
@@ -63,19 +56,6 @@ public sealed class SyncRootConnector(
 	public void Disconnect(CF_CONNECTION_KEY connectionKey) {
 		logger.LogDebug("Disconnecting sync provider, {connectionKey}", connectionKey);
 		CloudFilter.DisconnectSyncRoot(connectionKey);
-	}
-		
-	public async Task ProcessQueueAsync(CancellationToken stoppingToken = default) {
-		var cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, _disposeTokenSource.Token).Token;
-		while (!cancellationToken.IsCancellationRequested) {
-			var e = await _channel.Reader.ReadAsync(cancellationToken);
-			var task = e.Type switch {
-				CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION => OnRenameCompletion(_rootDirectory, e.Info, e.Parameters),
-				CF_CALLBACK_TYPE.CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION => OnDeleteCompletion(_rootDirectory, e.Info),
-				_ => throw new NotImplementedException(),
-			};
-			await task;
-		}
 	}
 
 	private void FetchPlaceholders(in CF_CALLBACK_INFO callbackInfo, in CF_CALLBACK_PARAMETERS callbackParameters) {
@@ -139,21 +119,20 @@ public sealed class SyncRootConnector(
 		logger.LogDebug("SyncRoot CloseCompletion {path} {flags}", callbackInfo.NormalizedPath, callbackParameters.CloseCompletion.Flags);
 	}
 
-	private async Task OnRenameCompletion(string rootDirectory, CF_CALLBACK_INFO callbackInfo, CallbackParameters callbackParameters) {
-		if (callbackParameters is not RenameCompletionCallbackParameters renameCompletionParameters) {
-			throw new ArgumentException($"Unexpected parameters type {callbackParameters.GetType()}", nameof(callbackParameters));
-		}
-		logger.LogDebug("SyncRoot Rename {old} -> {new}", renameCompletionParameters.SourcePath, callbackInfo.NormalizedPath);
-		var oldClientPath = Path.Join(callbackInfo.VolumeDosName, renameCompletionParameters.SourcePath[1..]);
-		var oldRelativePath = PathMapper.GetRelativePath(oldClientPath, rootDirectory);
-		var newClientPath = Path.Join(callbackInfo.VolumeDosName, callbackInfo.NormalizedPath[1..]);
-		var newRelativePath = PathMapper.GetRelativePath(newClientPath,	rootDirectory);
+	private async Task OnRenameCompletion(string volumeDosName, string oldPath, string newPath) {
+		logger.LogDebug("SyncRoot Rename {old} -> {new}", oldPath, newPath);
+		var oldClientPath = Path.Join(volumeDosName, oldPath[1..]);
+		var oldRelativePath = PathMapper.GetRelativePath(oldClientPath, _rootDirectory);
+		var newClientPath = Path.Join(volumeDosName, newPath[1..]);
+		var newRelativePath = PathMapper.GetRelativePath(newClientPath, _rootDirectory);
+		using var oldLocker = await fileLocker.Lock(oldRelativePath);
+		using var newLocker = await fileLocker.Lock(newRelativePath);
 		try {
 			if (!remoteService.Exists(oldRelativePath)) {
 				return;
 			}
 			// If moving outside of sync directory, treat like a delete
-			if (!newClientPath.StartsWith(rootDirectory)) {
+			if (!newClientPath.StartsWith(_rootDirectory)) {
 				if (remoteService.IsDirectory(oldRelativePath)) {
 					remoteService.DeleteDirectory(oldRelativePath);
 				}
@@ -174,9 +153,9 @@ public sealed class SyncRootConnector(
 		}
 	}
 
-	private async Task OnDeleteCompletion(string rootDirectory, CF_CALLBACK_INFO callbackInfo) {
-		logger.LogDebug("SyncRoot Delete {path}", callbackInfo.NormalizedPath);
-		var clientPath = Path.Join(callbackInfo.VolumeDosName, callbackInfo.NormalizedPath[1..]);
+	private async Task OnDeleteCompletion(string volumeDosName, string path) {
+		logger.LogDebug("SyncRoot Delete {path}", path);
+		var clientPath = Path.Join(volumeDosName, path[1..]);
 		// For files created in client, sometimes it's not actually deleted yet. Wait until it's really gone.
 		for (var attempt = 0; attempt < 60 && Path.Exists(clientPath); attempt++) {
 			logger.LogDebug("File has not yet been deleted, waiting before retry");
@@ -186,7 +165,8 @@ public sealed class SyncRootConnector(
 			logger.LogWarning("Received delete completion, but file has not been deleted: {clientPath}", clientPath);
 			return;
 		}
-		var relativePath = PathMapper.GetRelativePath(clientPath, rootDirectory);
+		var relativePath = PathMapper.GetRelativePath(clientPath, _rootDirectory);
+		using var locker = await fileLocker.Lock(relativePath);
 		if (!remoteService.Exists(relativePath)) {
 			return;
 		}
@@ -201,10 +181,5 @@ public sealed class SyncRootConnector(
 		catch (Exception ex) {
 			logger.LogError(ex, "Delete server object failed");
 		}
-	}
-
-	public void Dispose() {
-		_disposeTokenSource.Cancel();
-		_disposeTokenSource.Dispose();
 	}
 }
