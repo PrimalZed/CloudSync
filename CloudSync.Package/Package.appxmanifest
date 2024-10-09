@@ -48,7 +48,7 @@
 				<uap:SplashScreen Image="Images\SplashScreen.png" />
 			</uap:VisualElements>
 			<Extensions>
-				<desktop:Extension Category="windows.startupTask" EntryPoint="Windows.FullTrustApplication" uap10:Parameters="--silent">
+				<desktop:Extension Category="windows.startupTask" EntryPoint="Windows.FullTrustApplication" uap10:Parameters="--silent=">
 					<desktop:StartupTask DisplayName="Cloud Sync" Enabled="true" TaskId="PrimalZed.CloudSync" rescap5:ImmediateRegistration="true" />
 				</desktop:Extension>
 				<cloudfiles:Extension Category="windows.cloudFiles">

@@ -19,6 +19,7 @@ public partial class App : Application {
 	/// Gets the <see cref="IServiceProvider"/> instance to resolve application services.
 	/// </summary>
 	public required IServiceProvider ServiceProvider { get; init; }
+	public required AppOptions Options { get; init; }
 	public bool Exiting { get; private set; } = false;
 	public Window? Window { get; private set; }
 	private TaskbarIcon? taskbarIcon;
@@ -49,7 +50,9 @@ public partial class App : Application {
 			args.Handled = true;
 			Window.AppWindow.Hide();
 		};
-		Window.Activate();
+		if (!Options.IsSilentStart) {
+			Window.Activate();
+		}
 	}
 
 	private void InitializeTrayIcon() {

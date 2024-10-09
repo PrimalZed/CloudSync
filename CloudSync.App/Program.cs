@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PrimalZed.CloudSync;
@@ -29,6 +30,12 @@ builder.Services
 	.AddSingleton<LocalContextViewModel>()
 	.AddSingleton<SftpContextViewModel>()
 	.AddSingleton<RegistrarViewModel>()
+	.AddOptions<AppOptions>()
+	.Configure<IConfiguration>((options, config) => {
+		var silentConfig = config.GetSection("silent");
+		options.IsSilentStart = silentConfig.Value is not null;
+	})
+	.Services
 	.AddHostedService<AppService>();
 
 var host = builder.Build();
