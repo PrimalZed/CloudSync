@@ -7,20 +7,23 @@ using Vanara.PInvoke;
 
 namespace PrimalZed.CloudSync.Interop;
 public static class CloudFilter {
-	public static void ConnectSyncRoot(
+	public static CldApi.CF_CALLBACK_REGISTRATION[] ConnectSyncRoot(
 		string syncRootPath,
 		SyncRootEvents? events,
 		out CldApi.CF_CONNECTION_KEY connectionKey
-	) =>
+	) {
+		var callbackRegistrations = events?.ToRegistrationArray() ?? [CldApi.CF_CALLBACK_REGISTRATION.CF_CALLBACK_REGISTRATION_END];
 		CldApi.CfConnectSyncRoot(
 			syncRootPath,
-			events?.ToRegistrationArray() ?? [CldApi.CF_CALLBACK_REGISTRATION.CF_CALLBACK_REGISTRATION_END],
+			callbackRegistrations,
 			// optional callbackContext
 			ConnectFlags: CldApi.CF_CONNECT_FLAGS.CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO
 				| CldApi.CF_CONNECT_FLAGS.CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH
 				| CldApi.CF_CONNECT_FLAGS.CF_CONNECT_FLAG_BLOCK_SELF_IMPLICIT_HYDRATION,
 			ConnectionKey: out connectionKey
 		).ThrowIfFailed("Connect sync root failed");
+		return callbackRegistrations;
+	}
 
 	public static void DisconnectSyncRoot(CldApi.CF_CONNECTION_KEY connectionKey) =>
 		CldApi.CfDisconnectSyncRoot(connectionKey)

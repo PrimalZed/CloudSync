@@ -8,15 +8,6 @@ using Vanara.PInvoke;
 using static Vanara.PInvoke.CldApi;
 
 namespace PrimalZed.CloudSync;
-public record Callback {
-	public required CF_CALLBACK_TYPE Type { get; init; }
-	public required CF_CALLBACK_INFO Info { get; init; }
-	public CallbackParameters Parameters { get; init; } = new CallbackParameters();
-}
-public record CallbackParameters {}
-public record RenameCompletionCallbackParameters : CallbackParameters {
-	public required string SourcePath { get; init; }
-}
 public sealed class SyncRootConnector(
 	ISyncProviderContextAccessor contextAccessor,
 	ChannelWriter<Func<Task>> taskWriter,
@@ -26,9 +17,12 @@ public sealed class SyncRootConnector(
 ) {
 	private readonly string _rootDirectory = contextAccessor.Context.RootDirectory;
 
+	// Trying to prevent garbage collection of these callbacks
+	private static CF_CALLBACK_REGISTRATION[] CallbackRegistrations;
+
 	public CF_CONNECTION_KEY Connect() {
 		logger.LogDebug("Connecting sync provider to {syncRootPath}", _rootDirectory);
-		CloudFilter.ConnectSyncRoot(
+		CallbackRegistrations = CloudFilter.ConnectSyncRoot(
 			_rootDirectory,
 			new SyncRootEvents {
 				FetchPlaceholders = FetchPlaceholders,
@@ -80,7 +74,8 @@ public sealed class SyncRootConnector(
 		try {
 			var clientFile = Path.Join(callbackInfo.VolumeDosName, callbackInfo.NormalizedPath[1..]);
 
-			var buffer = new byte[4096];
+			var bufferSize = Math.Min(callbackParameters.FetchData.RequiredLength, 4096 * 4);
+			var buffer = new byte[bufferSize];
 			long startOffset = callbackParameters.FetchData.RequiredFileOffset;
 			long currentOffset = startOffset;
 			long targetOffset = callbackParameters.FetchData.RequiredFileOffset
@@ -92,7 +87,7 @@ public sealed class SyncRootConnector(
 			fileStream.Seek(currentOffset, SeekOrigin.Begin);
 			while (currentOffset <= targetOffset && (readLength = fileStream.Read(buffer, 0, buffer.Length)) > 0) {
 				// Update the transfer progress
-				CloudFilter.ReportProgress(callbackInfo, fileStream.Length, currentOffset + readLength);
+				CloudFilter.ReportProgress(callbackInfo, callbackInfo.FileSize, currentOffset + readLength);
 				// TODO: Tell the Shell so File Explorer can display the progress bar in its view
 
 				// This helper function tells the Cloud File API about the transfer,
