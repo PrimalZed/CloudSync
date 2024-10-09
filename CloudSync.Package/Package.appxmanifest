@@ -3,6 +3,7 @@
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:rescap5="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities/5"
 	xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
@@ -47,7 +48,7 @@
 				<uap:SplashScreen Image="Images\SplashScreen.png" />
 			</uap:VisualElements>
 			<Extensions>
-				<desktop:Extension Category="windows.startupTask" EntryPoint="Windows.FullTrustApplication" Executable="CloudSync.Service.exe">
+				<desktop:Extension Category="windows.startupTask" EntryPoint="Windows.FullTrustApplication" uap10:Parameters="--silent">
 					<desktop:StartupTask DisplayName="Cloud Sync" Enabled="true" TaskId="PrimalZed.CloudSync" rescap5:ImmediateRegistration="true" />
 				</desktop:Extension>
 				<cloudfiles:Extension Category="windows.cloudFiles">
