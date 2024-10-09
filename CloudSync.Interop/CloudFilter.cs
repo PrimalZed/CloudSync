@@ -170,7 +170,7 @@ public static class CloudFilter {
 
 	public static SafeMetaHFILE CreateHFileWithOplock(string clientPath, FileAccess access = FileAccess.Read) {
 		var hr = CldApi.CfOpenFileWithOplock(clientPath, (CldApi.CF_OPEN_FILE_FLAGS)access | CldApi.CF_OPEN_FILE_FLAGS.CF_OPEN_FILE_FLAG_EXCLUSIVE, out var hcffile);
-		hr.MyThrowIfFailed("Failed to open hfile");
+		hr.ThrowIfFailed("Failed to open hfile");
 		return hcffile.ToMeta().ThrowIfInvalid(clientPath);
 	}
 
