@@ -47,6 +47,10 @@ public class LocalReadWriteService(
 
 	private void CopyFile(FileInfo clientFileInfo, string serverFile) {
 		clientFileInfo.CopyTo(serverFile, overwrite: true);
+		var serverFileAttributes = File.GetAttributes(serverFile);
+		if (serverFileAttributes.HasFlag(FileAttributes.ReadOnly)) {
+			File.SetAttributes(serverFile, serverFileAttributes & ~FileAttributes.ReadOnly);
+		}
 		//var serverFileInfo = new FileInfo(serverFile) {
 		//	CreationTimeUtc = clientFileInfo.CreationTimeUtc,
 		//	LastWriteTimeUtc = clientFileInfo.LastWriteTimeUtc,

@@ -101,6 +101,9 @@ public class PlaceholdersService(
 		}
 		var clientFileInfo = new FileInfo(clientFile);
 		var downloaded = !clientFileInfo.Attributes.HasFlag(FileAttributes.Offline);
+		if (clientFileInfo.Attributes.HasFlag(FileAttributes.ReadOnly)) {
+			clientFileInfo.Attributes &= ~FileAttributes.ReadOnly;
+		}
 
 		using var hfile = downloaded
 			? await FileHelper.WaitUntilUnlocked(() => CloudFilter.CreateHFileWithOplock(clientFile, FileAccess.Write), _logger)
