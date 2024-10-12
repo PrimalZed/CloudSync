@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using PrimalZed.CloudSync.Abstractions;
 using PrimalZed.CloudSync.Commands;
-using PrimalZed.CloudSync.Remote.Sftp;
 using Windows.Storage;
 
 namespace PrimalZed.CloudSync.App.ViewModels;
@@ -24,19 +23,14 @@ public partial class RegistrarViewModel(
 	public bool IsRegistered => SyncRoots.Any();
 	public bool IsReady => !IsPending;
 
-	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(IsReady))]
-	private Task RegisterSftp(SftpContext context) =>
-		Register($"Sftp!{context.Host}:{context.Port}!{context.Directory.Replace("/", "|")}!{context.Username}", context);
-
-	public async Task Register<T>(string accountId, T context) where T : struct {
+	public async Task Register<T>(string syncDirectory, string accountId, T context) where T : struct {
 		IsPending = true;
-		RegisterSftpCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		Error = null;
 		try {
 			var registerCommand = new RegisterSyncRootCommand {
 				AccountId = accountId,
-				Directory = @"C:\SyncTestClient",
+				Directory = syncDirectory,
 				PopulationPolicy = PopulationPolicy.Full,
 			};
 			var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
@@ -48,7 +42,6 @@ public partial class RegistrarViewModel(
 			Error = $"Could not register: {ex.GetType()}, {ex.Message}, {ex.HResult}";
 		}
 		IsPending = false;
-		RegisterSftpCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		UpdateSyncRoots();
 	}
@@ -56,7 +49,6 @@ public partial class RegistrarViewModel(
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(CanUnregister))]
 	private async Task Unregister(SyncRootInfo syncRoot) {
 		IsPending = true;
-		RegisterSftpCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		Error = null;
 		try {
@@ -68,7 +60,6 @@ public partial class RegistrarViewModel(
 			Error = $"Could not register: {ex.GetType()}, {ex.Message}, {ex.HResult}";
 		}
 		IsPending = false;
-		RegisterSftpCommand.NotifyCanExecuteChanged();
 		UnregisterCommand.NotifyCanExecuteChanged();
 		UpdateSyncRoots();
 	}

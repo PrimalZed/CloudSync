@@ -10,6 +10,17 @@ public partial class LocalContextViewModel : ObservableValidator {
 
 	[ObservableProperty]
 	[NotifyDataErrorInfo]
+	[NotifyPropertyChangedFor(nameof(CanRegister))]
+	[Required]
+	[MaxLength(50)]
+	private string _syncDirectory = string.Empty;
+
+	[ObservableProperty]
+	private bool _syncDirectoryHasErrors;
+
+	[ObservableProperty]
+	[NotifyDataErrorInfo]
+	[NotifyPropertyChangedFor(nameof(AccountId))]
 	[NotifyPropertyChangedFor(nameof(LocalContext))]
 	[NotifyPropertyChangedFor(nameof(CanRegister))]
 	[Required]
@@ -19,6 +30,7 @@ public partial class LocalContextViewModel : ObservableValidator {
 	[ObservableProperty]
 	private bool _directoryHasErrors;
 
+	public string AccountId => $"{LocalConstants.KIND}!{Directory.Replace(@"\", "|")}";
 	public LocalContext LocalContext => new() {
 		Directory = Directory,
 	};
@@ -35,7 +47,7 @@ public partial class LocalContextViewModel : ObservableValidator {
 
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(CanRegister))]
 	private Task RegisterLocal() =>
-		_registrarViewModel.Register($"{LocalConstants.KIND}!{Directory.Replace(@"\", "|")}", LocalContext);
+		_registrarViewModel.Register(SyncDirectory, AccountId, LocalContext);
 
 	private void LocalContextViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 		switch (e.PropertyName) {
@@ -51,6 +63,9 @@ public partial class LocalContextViewModel : ObservableValidator {
 		switch (e.PropertyName) {
 			case nameof(Directory):
 				DirectoryHasErrors = hasErrors;
+				break;
+			case nameof(SyncDirectory):
+				SyncDirectoryHasErrors = hasErrors;
 				break;
 		}
 	}

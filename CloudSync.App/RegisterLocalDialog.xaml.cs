@@ -20,6 +20,18 @@ namespace PrimalZed.CloudSync.App {
 			DataContext = App.Current.ServiceProvider.GetRequiredService<LocalContextViewModel>();
 		}
 
+		private async void SelectSyncDirectory_Click(object sender, RoutedEventArgs e) {
+			var folderPicker = new FolderPicker();
+			var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.Current.Window);
+			WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, windowHandle);
+			folderPicker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
+			folderPicker.FileTypeFilter.Add("*");
+
+			// Open the picker for the user to pick a folder
+			StorageFolder folder = await folderPicker.PickSingleFolderAsync();
+			DataContext.SyncDirectory = folder?.Path ?? string.Empty;
+		}
+
 		private async void SelectDirectory_Click(object sender, RoutedEventArgs e) {
 			var folderPicker = new FolderPicker();
 			var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.Current.Window);

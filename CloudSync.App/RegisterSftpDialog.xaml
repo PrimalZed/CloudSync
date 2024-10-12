@@ -25,6 +25,12 @@
 		</ResourceDictionary>
 	</ContentDialog.Resources>
 	<StackPanel>
+		<Button Content="Select Sync Directory"
+			Click="SelectSyncDirectory_Click"
+			Style="{x:Bind DataContext.SyncDirectoryHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+		<TextBlock
+			Text="{x:Bind DataContext.SyncDirectory, Mode=OneWay}"
+			Style="{x:Bind DataContext.SyncDirectoryHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
 		<TextBox
 			Header="Host"
 			PlaceholderText="sftp.foo.com"

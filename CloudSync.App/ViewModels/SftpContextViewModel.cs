@@ -10,6 +10,17 @@ public partial class SftpContextViewModel : ObservableValidator {
 
 	[ObservableProperty]
 	[NotifyDataErrorInfo]
+	[NotifyPropertyChangedFor(nameof(CanRegister))]
+	[Required]
+	[MaxLength(50)]
+	private string _syncDirectory = string.Empty;
+
+	[ObservableProperty]
+	private bool _syncDirectoryHasErrors;
+
+	[ObservableProperty]
+	[NotifyDataErrorInfo]
+	[NotifyPropertyChangedFor(nameof(AccountId))]
 	[NotifyPropertyChangedFor(nameof(SftpContext))]
 	[NotifyPropertyChangedFor(nameof(CanRegister))]
 	[Required]
@@ -21,6 +32,7 @@ public partial class SftpContextViewModel : ObservableValidator {
 
 	[ObservableProperty]
 	[NotifyDataErrorInfo]
+	[NotifyPropertyChangedFor(nameof(AccountId))]
 	[NotifyPropertyChangedFor(nameof(SftpContext))]
 	[NotifyPropertyChangedFor(nameof(CanRegister))]
 	[Range(0, int.MaxValue)]
@@ -31,6 +43,7 @@ public partial class SftpContextViewModel : ObservableValidator {
 
 	[ObservableProperty]
 	[NotifyDataErrorInfo]
+	[NotifyPropertyChangedFor(nameof(AccountId))]
 	[NotifyPropertyChangedFor(nameof(SftpContext))]
 	[NotifyPropertyChangedFor(nameof(CanRegister))]
 	[Required]
@@ -42,6 +55,7 @@ public partial class SftpContextViewModel : ObservableValidator {
 
 	[ObservableProperty]
 	[NotifyDataErrorInfo]
+	[NotifyPropertyChangedFor(nameof(AccountId))]
 	[NotifyPropertyChangedFor(nameof(SftpContext))]
 	[NotifyPropertyChangedFor(nameof(CanRegister))]
 	[Required]
@@ -69,6 +83,8 @@ public partial class SftpContextViewModel : ObservableValidator {
 	[Range(1, int.MaxValue)]
 	private int _watchPeriodSeconds = 2;
 
+	public string AccountId => $"{SftpConstants.KIND}!{SftpContext.Host}:{SftpContext.Port}!{SftpContext.Directory.Replace("/", "|")}!{SftpContext.Username}";
+
 	public SftpContext SftpContext => new() {
 		Host = Host.Trim(),
 		Port = Port,
@@ -90,7 +106,7 @@ public partial class SftpContextViewModel : ObservableValidator {
 
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(CanRegister))]
 	private Task RegisterSftp() =>
-		_registrarViewModel.Register($"{SftpConstants.KIND}!{SftpContext.Host}:{SftpContext.Port}!{SftpContext.Directory.Replace("/", "|")}!{SftpContext.Username}", SftpContext);
+		_registrarViewModel.Register(SyncDirectory, AccountId, SftpContext);
 
 	private void Registrar_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 		switch (e.PropertyName) {
@@ -113,6 +129,9 @@ public partial class SftpContextViewModel : ObservableValidator {
 	private void SftpContextViewModel_ErrorsChanged(object? sender, DataErrorsChangedEventArgs e) {
 		var hasErrors = GetErrors(e.PropertyName).Any();
 		switch (e.PropertyName) {
+			case nameof(SyncDirectory):
+				SyncDirectoryHasErrors = hasErrors;
+				break;
 			case nameof(Host):
 				HostHasErrors = hasErrors;
 				break;
