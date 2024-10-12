@@ -54,17 +54,9 @@ public class SftpReadService(
 		return GetRemoteFileInfo(sftpFile);
 	}
 
-	public async Task<Stream> GetFileStream(string relativeFile) {
-		var serverFile = GetSftpPath(relativeFile);
-		var stream = new MemoryStream();
-		try {
-			await Task.Factory.FromAsync(client.BeginDownloadFile(GetSftpPath(relativeFile), stream), client.EndDownloadFile);
-		}
-		catch {
-			stream.Dispose();
-			throw;
-		}
-		return stream;
+	public Task<Stream> GetFileStream(string relativeFile) {
+		SftpFileStream sftpStream = client.Open(GetSftpPath(relativeFile), FileMode.Open);
+		return Task.FromResult((Stream)sftpStream);
 	}
 
 	protected string GetSftpPath(string relativePath) =>
