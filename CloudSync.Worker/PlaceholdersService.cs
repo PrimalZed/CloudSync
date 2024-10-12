@@ -156,16 +156,8 @@ public class PlaceholdersService(
 			CloudFilter.ConvertToPlaceholder(clientDirectory);
 		}
 
-		if (remoteDirectoryInfo.GetHashCode() == clientDirectoryInfo.GetHashCode()) {
-			_logger.LogDebug("Set Directory In-Sync");
-			CloudFilter.SetInSyncState(clientDirectory);
-			return Task.CompletedTask;
-		}
-
-		_logger.LogDebug("Update Directory Placeholder");
-		using var hfile = CloudFilter.CreateHFileWithOplock(clientDirectory, FileAccess.Write);
-		var relativePath = PathMapper.GetRelativePath(clientDirectory, rootDirectory);
-		CloudFilter.UpdateDirectoryPlaceholder(hfile, remoteDirectoryInfo, relativePath);
+		_logger.LogDebug("Set Directory In-Sync");
+		CloudFilter.SetInSyncState(clientDirectory);
 		return Task.CompletedTask;
 	}
 

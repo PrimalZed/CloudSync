@@ -60,7 +60,12 @@ public sealed class SyncRootConnector(
 		var directoryInfos = remoteService.EnumerateDirectories(relativeDirectory, callbackParameters.FetchPlaceholders.Pattern);
 		var fileSystemInfos = fileInfos.Concat<RemoteFileSystemInfo>(directoryInfos).ToArray();
 
-		CloudFilter.TransferPlaceholders(callbackInfo, fileSystemInfos);
+		try {
+			CloudFilter.TransferPlaceholders(callbackInfo, fileSystemInfos);
+		}
+		catch (Exception ex) {
+			logger.LogError(ex, "Error to transfer placeholders");
+		}
 	}
 
 	private async void FetchData(CF_CALLBACK_INFO callbackInfo, CF_CALLBACK_PARAMETERS callbackParameters) {

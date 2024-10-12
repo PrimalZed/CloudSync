@@ -174,7 +174,7 @@ public static class CloudFilter {
 			fileShare,
 			dwCreationDisposition: FileMode.Open,
 			dwFlagsAndAttributes: FileFlagsAndAttributes.FILE_FLAG_BACKUP_SEMANTICS
-		).ToMeta();
+		).ToMeta().ThrowIfInvalid(path);
 
 	public static SafeMetaHFILE CreateHFileWithOplock(string clientPath, FileAccess access = FileAccess.Read) {
 		var hr = CldApi.CfOpenFileWithOplock(clientPath, (CldApi.CF_OPEN_FILE_FLAGS)access | CldApi.CF_OPEN_FILE_FLAGS.CF_OPEN_FILE_FLAG_EXCLUSIVE, out var hcffile);
@@ -214,27 +214,49 @@ public static class CloudFilter {
 	}
 
 	public static void TransferPlaceholders(CldApi.CF_CALLBACK_INFO callbackInfo, RemoteFileSystemInfo[] remoteInfos) {
-		var opInfo = callbackInfo.ToOperationInfo(CldApi.CF_OPERATION_TYPE.CF_OPERATION_TYPE_TRANSFER_PLACEHOLDERS);
-		using var disposableCreateInfos = remoteInfos
-				.Select((serverInfo) => serverInfo switch {
-					RemoteFileInfo fileInfo => new SafeCreateInfo(fileInfo, serverInfo.RelativePath),
-					RemoteDirectoryInfo directoryInfo => new SafeCreateInfo(directoryInfo, serverInfo.RelativePath),
-					_ => throw new ArgumentException("Unexpected server info", nameof(remoteInfos)),
-				})
-				.ToDisposableArray();
-		var raw = disposableCreateInfos.Source.Select(x => x.CreateInfo).ToArray();
-		using var createInfoArrayPointer = SafeHGlobalHandle.CreateFromList(raw);
-		var opParameters = CldApi.CF_OPERATION_PARAMETERS.Create(
-			new CldApi.CF_OPERATION_PARAMETERS.TRANSFERPLACEHOLDERS {
-				CompletionStatus = NTStatus.STATUS_SUCCESS,
-				EntriesProcessed = 0,
-				PlaceholderArray = remoteInfos.Length != 0 ? createInfoArrayPointer : 0,
-				PlaceholderCount = Convert.ToUInt32(remoteInfos.Length),
-				PlaceholderTotalCount = Convert.ToUInt32(remoteInfos.Length),
-				Flags = CldApi.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAGS.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAG_DISABLE_ON_DEMAND_POPULATION,
-			}
-		);
-		CldApi.CfExecute(opInfo, ref opParameters).ThrowIfFailed("Transfer Placeholders failed");
+		if (remoteInfos.Length == 0) {
+			var opInfo = callbackInfo.ToOperationInfo(CldApi.CF_OPERATION_TYPE.CF_OPERATION_TYPE_TRANSFER_PLACEHOLDERS);
+			var opParameters = CldApi.CF_OPERATION_PARAMETERS.Create(
+				new CldApi.CF_OPERATION_PARAMETERS.TRANSFERPLACEHOLDERS {
+					CompletionStatus = NTStatus.STATUS_SUCCESS,
+					EntriesProcessed = 0,
+					PlaceholderArray = 0,
+					PlaceholderCount = 0,
+					PlaceholderTotalCount = 0,
+					Flags = CldApi.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAGS.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAG_STOP_ON_ERROR
+						| CldApi.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAGS.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAG_DISABLE_ON_DEMAND_POPULATION,
+				}
+			);
+			CldApi.CfExecute(opInfo, ref opParameters).ThrowIfFailed("Transfer Placeholders failed");
+			return;
+		}
+
+		// Can cause corrupt placeholders when done all at once for some reason
+		// Seems to work one at a time
+		var entriesProcessed = 0u;
+		foreach (var remoteInfo in remoteInfos) {
+			var opInfo = callbackInfo.ToOperationInfo(CldApi.CF_OPERATION_TYPE.CF_OPERATION_TYPE_TRANSFER_PLACEHOLDERS);
+			using SafeCreateInfo createInfo = remoteInfo switch {
+				RemoteFileInfo fileInfo => new SafeCreateInfo(fileInfo, remoteInfo.RelativePath),
+				RemoteDirectoryInfo directoryInfo => new SafeCreateInfo(directoryInfo, remoteInfo.RelativePath),
+				_ => throw new ArgumentException("Unexpected server info", nameof(remoteInfos)),
+			};
+			CldApi.CF_PLACEHOLDER_CREATE_INFO[] raw = [createInfo];
+			using SafeHGlobalHandle createInfoArrayPointer = SafeHGlobalHandle.CreateFromList(raw);
+			var opParameters = CldApi.CF_OPERATION_PARAMETERS.Create(
+				new CldApi.CF_OPERATION_PARAMETERS.TRANSFERPLACEHOLDERS {
+					CompletionStatus = NTStatus.STATUS_SUCCESS,
+					EntriesProcessed = entriesProcessed,
+					PlaceholderArray = createInfoArrayPointer,
+					PlaceholderCount = 1,
+					PlaceholderTotalCount = Convert.ToUInt32(remoteInfos.Length),
+					Flags = CldApi.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAGS.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAG_STOP_ON_ERROR
+						| CldApi.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAGS.CF_OPERATION_TRANSFER_PLACEHOLDERS_FLAG_DISABLE_ON_DEMAND_POPULATION,
+				}
+			);
+			CldApi.CfExecute(opInfo, ref opParameters).ThrowIfFailed("Transfer Placeholders failed");
+			entriesProcessed++;
+		}
 	}
 
 	public static void FailTransferPlaceholders(CldApi.CF_CALLBACK_INFO callbackInfo) {
