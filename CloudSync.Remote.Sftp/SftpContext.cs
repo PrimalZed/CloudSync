@@ -20,6 +20,6 @@ public struct SftpContext {
 		Port = 22;
 		Username = string.Empty;
 		Password = string.Empty;
-		WatchPeriodSeconds = 10;
+		WatchPeriodSeconds = 2;
 	}
 }

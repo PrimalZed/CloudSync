@@ -67,7 +67,7 @@ public partial class SftpContextViewModel : ObservableValidator {
 	[NotifyPropertyChangedFor(nameof(SftpContext))]
 	[NotifyPropertyChangedFor(nameof(CanRegister))]
 	[Range(1, int.MaxValue)]
-	private int _watchPeriodSeconds = 10;
+	private int _watchPeriodSeconds = 2;
 
 	public SftpContext SftpContext => new() {
 		Host = Host.Trim(),

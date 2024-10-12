@@ -67,7 +67,7 @@ public class SftpReadWriteService(
 		var serverFile = GetSftpPath(relativeFile);
 		logger.LogDebug("Delete File {file}", serverFile);
 		client.DeleteFile(serverFile);
-		//DeleteDirectoryIfEmpty(serverFile);
+		DeleteDirectoryIfEmpty(serverFile);
 	}
 
 	public Task CreateDirectory(DirectoryInfo sourceDirectoryInfo, string relativeDirectory) {
@@ -116,5 +116,24 @@ public class SftpReadWriteService(
 		}
 
 		client.DeleteDirectory(serverDirectory);
+
+		DeleteDirectoryIfEmpty(serverDirectory);
+	}
+
+	private void DeleteDirectoryIfEmpty(string serverPath) {
+		var serverDirectory = Path.GetDirectoryName(serverPath)!.Replace(@"\", "/");
+		var root = GetSftpPath("");
+		if (serverDirectory == GetSftpPath("")) {
+			return;
+		}
+		if (!client.Exists(serverDirectory)) {
+			return;
+		}
+		var hasEntries = client.ListDirectory(serverDirectory)
+			.Where(x => !_relativeDirectoryNames.Contains(x.Name))
+			.Any();
+		if (!hasEntries) {
+			DeleteDirectory(PathMapper.GetRelativePath(serverDirectory, _context.Directory));
+		}
 	}
 }
