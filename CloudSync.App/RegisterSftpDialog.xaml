@@ -29,33 +29,32 @@
 			Header="Display Name"
 			PlaceholderText="My Sync"
 			Text="{x:Bind DataContext.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-			Style="{x:Bind DataContext.NameHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+			Style="{x:Bind DataContext.NameHasErrors, Mode=OneWay, Converter={StaticResource TextBoxValidationConverter}}"/>
 		<Button Content="Select Sync Directory"
 			Click="SelectSyncDirectory_Click"
-			Style="{x:Bind DataContext.SyncDirectoryHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+			Style="{x:Bind DataContext.SyncDirectoryHasErrors, Mode=OneWay, Converter={StaticResource ButtonValidationConverter}}"/>
 		<TextBlock
-			Text="{x:Bind DataContext.SyncDirectory, Mode=OneWay}"
-			Style="{x:Bind DataContext.SyncDirectoryHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+			Text="{x:Bind DataContext.SyncDirectory, Mode=OneWay}"/>
 		<TextBox
 			Header="Host"
 			PlaceholderText="sftp.foo.com"
 			Text="{x:Bind DataContext.Host, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-			Style="{x:Bind DataContext.HostHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+			Style="{x:Bind DataContext.HostHasErrors, Mode=OneWay, Converter={StaticResource TextBoxValidationConverter}}"/>
 		<NumberBox
 			Header="Port"
 			Value="{x:Bind DataContext.Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
 			NumberFormatter="{x:Bind IntegerFormatter}"
-			Style="{x:Bind DataContext.PortHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+			Style="{x:Bind DataContext.PortHasErrors, Mode=OneWay, Converter={StaticResource NumberBoxValidationConverter}}"/>
 		<TextBox
 			Header="Directory"
 			PlaceholderText="/home"
 			Text="{x:Bind DataContext.Directory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-			Style="{x:Bind DataContext.DirectoryHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+			Style="{x:Bind DataContext.DirectoryHasErrors, Mode=OneWay, Converter={StaticResource TextBoxValidationConverter}}"/>
 		<TextBox Header="Username"
 			Text="{x:Bind DataContext.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-			Style="{x:Bind DataContext.UsernameHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+			Style="{x:Bind DataContext.UsernameHasErrors, Mode=OneWay, Converter={StaticResource TextBoxValidationConverter}}"/>
 		<PasswordBox Header="Password"
 			Password="{x:Bind DataContext.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-			Style="{x:Bind DataContext.PasswordHasErrors, Mode=OneWay, Converter={StaticResource ValidationConverter}}"/>
+			Style="{x:Bind DataContext.PasswordHasErrors, Mode=OneWay, Converter={StaticResource PasswordBoxValidationConverter}}"/>
 	</StackPanel>
 </ContentDialog>
