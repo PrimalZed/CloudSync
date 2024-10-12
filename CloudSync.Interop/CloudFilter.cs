@@ -34,6 +34,11 @@ public static class CloudFilter {
 		return IsPlaceholder(hfile);
 	}
 
+	public static CldApi.CF_PLACEHOLDER_STATE GetPlaceholderState(string path) {
+		using var hfile = CreateHFile(path);
+		return GetPlaceholderState(hfile);
+	}
+
 	public static CldApi.CF_PLACEHOLDER_STATE GetPlaceholderState(HFILE hfile) {
 		Kernel32.FILE_ATTRIBUTE_TAG_INFO info = Kernel32.GetFileInformationByHandleEx<Kernel32.FILE_ATTRIBUTE_TAG_INFO>(
 			hfile,

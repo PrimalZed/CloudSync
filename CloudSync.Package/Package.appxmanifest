@@ -53,17 +53,29 @@
 				</desktop:Extension>
 				<cloudfiles:Extension Category="windows.cloudFiles">
 					<cloudfiles:CloudFiles>
-						<!--<cloudfiles:CustomStateHandler Clsid="20000000-0000-0000-0000-000000000001"/>
-						<cloudfiles:ThumbnailProviderHandler Clsid="703e61b4-f4a4-4803-b824-9d23dad651bc"/>
+						<cloudfiles:CustomStateHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+						<!--<cloudfiles:ThumbnailProviderHandler Clsid="703e61b4-f4a4-4803-b824-9d23dad651bc"/>-->
+						<cloudfiles:ThumbnailProviderHandler Clsid="20000000-0000-0000-0000-000000000001"/>
 						<cloudfiles:ExtendedPropertyHandler Clsid="20000000-0000-0000-0000-000000000001"/>
 						<cloudfiles:BannersHandler Clsid="20000000-0000-0000-0000-000000000001"/>
 						<cloudfiles:CloudFilesContextMenus>
-							<cloudfiles:Verb Id="Test" Clsid="4a3c9b56-f075-4499-b4ee-ba4b88d1fe05"/>
+							<cloudfiles:Verb Id="Sync" Clsid="942952b6-3bdc-4e50-8fe2-8d2d869ca70f"/>
+							<cloudfiles:Verb Id="Upload" Clsid="4a3c9b56-f075-4499-b4ee-ba4b88d1fe05"/>
 						</cloudfiles:CloudFilesContextMenus>
 						<cloudfiles:ContentUriSource Clsid="20000000-0000-0000-0000-000000000001"/>
-						<cloudfiles2:StorageProviderStatusUISourceFactory Clsid="d3252227-1396-40a5-bfe9-1fcc49333ab3"/>-->
+						<!--<cloudfiles2:StorageProviderStatusUISourceFactory Clsid="d3252227-1396-40a5-bfe9-1fcc49333ab3"/>-->
 					</cloudfiles:CloudFiles>
 				</cloudfiles:Extension>
+				<com:Extension Category="windows.comServer">
+					<com:ComServer>
+						<com:ExeServer DisplayName="Sync Command Handler" Executable="$targetnametoken$.exe">
+							<com:Class Id="942952b6-3bdc-4e50-8fe2-8d2d869ca70f"/>
+						</com:ExeServer>
+						<com:ExeServer DisplayName="Upload Command Handler" Executable="$targetnametoken$.exe">
+							<com:Class Id="4a3c9b56-f075-4499-b4ee-ba4b88d1fe05"/>
+						</com:ExeServer>
+					</com:ComServer>
+				</com:Extension>
 			</Extensions>
 		</Application>
 	</Applications>

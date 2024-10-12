@@ -21,9 +21,9 @@ builder.Services
 // Shell
 builder.Services
 	.AddCommonClassObjects()
-	.AddLocalClassObjects()
-	.AddSingleton<ShellRegistrar>();
-	//.AddHostedService<ShellWorker>();
+	//.AddLocalClassObjects()
+	.AddSingleton<ShellRegistrar>()
+	.AddHostedService<ShellWorker>();
 
 builder.Services
 	.AddHostedService<SyncProviderWorker>()

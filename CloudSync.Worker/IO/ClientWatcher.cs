@@ -20,13 +20,13 @@ public class ClientWatcher : IDisposable {
 		ISyncProviderContextAccessor contextAccessor,
 		ChannelWriter<Func<Task>> taskWriter,
 		FileLocker fileLocker,
-		IRemoteReadWriteService serverService,
+		IRemoteReadWriteService remoteService,
 		ILogger<ClientWatcher> logger
 	) {
 		_contextAccessor = contextAccessor;
 		_taskWriter = taskWriter;
 		_fileLocker = fileLocker;
-		_remoteService = serverService;
+		_remoteService = remoteService;
 		_logger = logger;
 		_watcher = CreateWatcher();
 	}

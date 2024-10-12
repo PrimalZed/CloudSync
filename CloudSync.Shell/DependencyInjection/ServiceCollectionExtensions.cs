@@ -12,7 +12,8 @@ public static class ServiceCollectionExtensions {
 
 	public static IServiceCollection AddCommonClassObjects(this IServiceCollection services) =>
 		services
-			.AddClassObject<TestCommand>();
+			.AddClassObject<SyncCommand>()
+			.AddClassObject<UploadCommand>();
 
 	public static IServiceCollection AddLocalClassObjects(this IServiceCollection services) =>
 		services

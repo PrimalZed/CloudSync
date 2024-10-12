@@ -9,6 +9,7 @@ namespace PrimalZed.CloudSync;
 public class SyncProvider(
 	ISyncProviderContextAccessor contextAccessor,
 	TaskQueue taskQueue,
+	ShellCommandQueue shellCommandQueue,
 	SyncRootConnector syncProvider,
 	PlaceholdersService placeholdersService,
 	ClientWatcher clientWatcher,
@@ -17,6 +18,7 @@ public class SyncProvider(
 ) {
 	public async Task Run(CancellationToken cancellation) {
 		taskQueue.Start(cancellation);
+		shellCommandQueue.Start(cancellation);
 
 		logger.LogDebug("Connecting...");
 		// Hook up callback methods (in this class) for transferring files between client and server
@@ -39,6 +41,9 @@ public class SyncProvider(
 
 		// Run until SIGTERM
 		await cancellation;
+
+		logger.LogDebug("Stopping shell command queue...");
+		await shellCommandQueue.Stop();
 		logger.LogDebug("Stopping task queue...");
 		await taskQueue.Stop();
 

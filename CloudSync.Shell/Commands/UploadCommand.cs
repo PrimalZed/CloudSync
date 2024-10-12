@@ -1,18 +1,19 @@
 using Microsoft.Extensions.Logging;
+using PrimalZed.CloudSync.Abstractions;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Threading.Channels;
 using Vanara.InteropServices;
 using Vanara.PInvoke;
-using Windows.Storage;
 using static Vanara.PInvoke.Ole32;
 using static Vanara.PInvoke.Shell32;
 using static Vanara.PInvoke.ShlwApi;
 
 namespace PrimalZed.CloudSync.Shell.Commands;
 [ComVisible(true), Guid("4a3c9b56-f075-4499-b4ee-ba4b88d1fe05")]
-public class TestCommand(ILogger<TestCommand> logger) : IExplorerCommand, IExplorerCommandState, IObjectWithSite {
+public class UploadCommand(ChannelWriter<ShellCommand> commandWriter, ILogger<UploadCommand> logger) : IExplorerCommand, IExplorerCommandState, IObjectWithSite {
   public HRESULT GetTitle(IShellItemArray psiItemArray, out string? ppszName) {
-    ppszName = "Test Command";
+    ppszName = "Reupload To Cloud";
     return HRESULT.S_OK;
   }
 
@@ -50,12 +51,13 @@ public class TestCommand(ILogger<TestCommand> logger) : IExplorerCommand, IExplo
         using var pShellItem = ComReleaserFactory.Create(psiItemArray.GetItemAt(i));
 
         var rawFullPath = pShellItem.Item.GetDisplayName(SIGDN.SIGDN_FILESYSPATH);
-        logger.LogDebug("Test Command received for file {path}", rawFullPath);
-        using var fullPath = new SafeCoTaskMemString(pShellItem.Item.GetDisplayName(SIGDN.SIGDN_FILESYSPATH));
+        logger.LogInformation("Upload Command received for file {path}", rawFullPath);
 
-        var item = (IStorageItem)StorageFile.GetFileFromPathAsync(fullPath);
-
-        SHChangeNotify(SHCNE.SHCNE_UPDATEITEM, SHCNF.SHCNF_PATHW, fullPath);
+        commandWriter.TryWrite(new ShellCommand {
+          Kind = ShellCommandKind.Do,
+          FullPath = rawFullPath,
+        });
+        //client.StartUpload(rawFullPath);
       }
     }
     catch (Exception ex) {
