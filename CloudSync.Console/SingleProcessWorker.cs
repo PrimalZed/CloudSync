@@ -12,22 +12,24 @@ public class SingleProcessWorker(
 ) : BackgroundService {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 		var registerCommand = new RegisterSyncRootCommand {
-			AccountId = @"Sftp!Mountainduck",
+			Name = "Test Sync",
+			AccountId = @"Local!TestAccount1",
+			//AccountId = @"Sftp!Mountainduck",
 			Directory = @"C:\SyncTestClient",
 			PopulationPolicy = PopulationPolicy.Full,
 		};
 		var storageFolder = await StorageFolder.GetFolderFromPathAsync(registerCommand.Directory);
-		//var localContext = new LocalContext {
-		//	Directory = @"C:\SyncTestServer",
-		//};
-		var sftpContext = new SftpContext {
-			Directory = "/home",
-			Host = "sftp.foo.com",
-			Port = 2000,
-			Username = "guest",
-			Password = "pwd",
+		var localContext = new LocalContext {
+			Directory = @"C:\SyncTestServer",
 		};
-		var syncRootInfo = syncRootRegistrar.Register(registerCommand, storageFolder, sftpContext);
+		//var sftpContext = new SftpContext {
+		//	Directory = "/home",
+		//	Host = "sftp.foo.com",
+		//	Port = 2000,
+		//	Username = "guest",
+		//	Password = "pwd",
+		//};
+		var syncRootInfo = syncRootRegistrar.Register(registerCommand, storageFolder, localContext);
 		syncProviderPool.Start(syncRootInfo);
 
 		await stoppingToken;

@@ -23,12 +23,13 @@ public partial class RegistrarViewModel(
 	public bool IsRegistered => SyncRoots.Any();
 	public bool IsReady => !IsPending;
 
-	public async Task Register<T>(string syncDirectory, string accountId, T context) where T : struct {
+	public async Task Register<T>(string name, string syncDirectory, string accountId, T context) where T : struct {
 		IsPending = true;
 		UnregisterCommand.NotifyCanExecuteChanged();
 		Error = null;
 		try {
 			var registerCommand = new RegisterSyncRootCommand {
+				Name = name,
 				AccountId = accountId,
 				Directory = syncDirectory,
 				PopulationPolicy = PopulationPolicy.Full,

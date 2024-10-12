@@ -21,6 +21,7 @@ public class SyncRootRegistrar(
 			.Where((x) => x.Id.StartsWith(providerOptions.Value.ProviderId + "!"))
 			.Select((x) => new SyncRootInfo {
 				Id = x.Id,
+				Name = x.DisplayNameResource,
 				Directory = x.Path.Path,
 			})
 			.ToArray();
@@ -45,7 +46,7 @@ public class SyncRootRegistrar(
 		var info = new StorageProviderSyncRootInfo {
 			Id = id,
 			Path = directory,
-			DisplayNameResource = $"PrimalZed CloudSync - {command.AccountId}",
+			DisplayNameResource = command.Name,
 			IconResource = @"%SystemRoot%\system32\charmap.exe,0",
 			HydrationPolicy = StorageProviderHydrationPolicy.Partial,
 			HydrationPolicyModifier = StorageProviderHydrationPolicyModifier.AutoDehydrationAllowed,

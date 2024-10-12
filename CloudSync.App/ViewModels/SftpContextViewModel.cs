@@ -13,6 +13,16 @@ public partial class SftpContextViewModel : ObservableValidator {
 	[NotifyPropertyChangedFor(nameof(CanRegister))]
 	[Required]
 	[MaxLength(50)]
+	private string _name = string.Empty;
+
+	[ObservableProperty]
+	private bool _nameHasErrors;
+
+	[ObservableProperty]
+	[NotifyDataErrorInfo]
+	[NotifyPropertyChangedFor(nameof(CanRegister))]
+	[Required]
+	[MaxLength(50)]
 	private string _syncDirectory = string.Empty;
 
 	[ObservableProperty]
@@ -106,7 +116,7 @@ public partial class SftpContextViewModel : ObservableValidator {
 
 	[RelayCommand(AllowConcurrentExecutions = false, CanExecute = nameof(CanRegister))]
 	private Task RegisterSftp() =>
-		_registrarViewModel.Register(SyncDirectory, AccountId, SftpContext);
+		_registrarViewModel.Register(Name, SyncDirectory, AccountId, SftpContext);
 
 	private void Registrar_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 		switch (e.PropertyName) {
@@ -129,6 +139,9 @@ public partial class SftpContextViewModel : ObservableValidator {
 	private void SftpContextViewModel_ErrorsChanged(object? sender, DataErrorsChangedEventArgs e) {
 		var hasErrors = GetErrors(e.PropertyName).Any();
 		switch (e.PropertyName) {
+			case nameof(Name):
+				NameHasErrors = hasErrors;
+				break;
 			case nameof(SyncDirectory):
 				SyncDirectoryHasErrors = hasErrors;
 				break;
