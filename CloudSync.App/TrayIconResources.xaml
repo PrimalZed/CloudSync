@@ -108,7 +108,7 @@
 	<tb:TaskbarIcon
         x:Key="TrayIcon"
         Visibility="Visible"
-        ToolTipText="ToolTip"
+        ToolTipText="Cloud Sync"
         DoubleClickCommand="{StaticResource ShowHideWindowCommand}"
         NoLeftClickDelay="True"
         >
