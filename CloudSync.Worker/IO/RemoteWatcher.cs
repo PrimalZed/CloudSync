@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using PrimalZed.CloudSync.Helpers;
 using PrimalZed.CloudSync.Remote.Abstractions;
 using System.Threading.Channels;
 
@@ -22,6 +23,9 @@ public sealed class RemoteWatcher(
 	private async Task HandleCreated(string relativePath) {
 		logger.LogDebug("Created {path}", relativePath);
 		await taskWriter.WriteAsync(async () => {
+			if (FileHelper.IsSystemFile(relativePath)) {
+				return;
+			}
 			using var locker = await fileLocker.Lock(relativePath);
 			try {
 				if (remoteReadService.IsDirectory(relativePath)) {

@@ -41,7 +41,7 @@ public class ClientWatcher : IDisposable {
 		};
 
 		watcher.Changed += async (object sender, FileSystemEventArgs e) => {
-			if (e.ChangeType != WatcherChangeTypes.Changed || !Path.Exists(e.FullPath)) {
+			if (e.ChangeType != WatcherChangeTypes.Changed || !Path.Exists(e.FullPath) || FileHelper.IsSystemFile(e.FullPath)) {
 				return;
 			}
 			var fileInfo = new FileInfo(e.FullPath);

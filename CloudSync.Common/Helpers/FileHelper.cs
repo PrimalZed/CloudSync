@@ -9,6 +9,10 @@ public static class FileHelper {
 		32
 	];
 	private const int DELAY_MS = 500;
+	private static readonly ImmutableHashSet<string> SYSTEM_FILE_NAMES = [
+		"desktop.ini",
+		"Thumbs.db"
+	];
 
 	public static async Task WaitUntilUnlocked(Action funcOrAction, ILogger logger) {
 		IOException? latestEx = null;
@@ -46,4 +50,7 @@ public static class FileHelper {
 		logger.LogWarning(ex, "File access error, waiting to retry; HR {0}", ex.HResult);
 		await Task.Delay(DELAY_MS);
 	}
+
+	public static bool IsSystemFile(string path) =>
+		SYSTEM_FILE_NAMES.Any(x => path.EndsWith(x, StringComparison.OrdinalIgnoreCase));
 }

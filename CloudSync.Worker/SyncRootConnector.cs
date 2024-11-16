@@ -56,7 +56,8 @@ public sealed class SyncRootConnector(
 		logger.LogDebug("Fetch Placeholders '{path}' '{pattern}'", callbackInfo.NormalizedPath, callbackParameters.FetchPlaceholders.Pattern);
 		var clientDirectory = Path.Join(callbackInfo.VolumeDosName, callbackInfo.NormalizedPath[1..]);
 		var relativeDirectory = PathMapper.GetRelativePath(clientDirectory, _rootDirectory);
-		var fileInfos = remoteService.EnumerateFiles(relativeDirectory, callbackParameters.FetchPlaceholders.Pattern);
+		var fileInfos = remoteService.EnumerateFiles(relativeDirectory, callbackParameters.FetchPlaceholders.Pattern)
+			.Where(x => !FileHelper.IsSystemFile(x.RelativePath));
 		var directoryInfos = remoteService.EnumerateDirectories(relativeDirectory, callbackParameters.FetchPlaceholders.Pattern);
 		var fileSystemInfos = fileInfos.Concat<RemoteFileSystemInfo>(directoryInfos).ToArray();
 
