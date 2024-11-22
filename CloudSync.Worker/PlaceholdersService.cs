@@ -18,31 +18,39 @@ public class PlaceholdersService(
 	private readonly DirectoryEqualityComparer _directoryComparer = new ();
 
 	public void CreateBulk(string subpath) {
-		using var filePlaceholderCreateInfos = remoteService.EnumerateFiles(subpath)
+		using (var safeFilePlaceholderCreateInfos = remoteService.EnumerateFiles(subpath)
+			.Where((x) => !FileHelper.IsSystemFile(x.RelativePath))
 			.Select(GetFilePlaceholderCreateInfo)
-			.ToDisposableArray();
-
-		var remoteSubDirectories = remoteService.EnumerateDirectories(subpath);
-		using var directoryPlaceholderCreateInfos = remoteSubDirectories
-			.Select(GetDirectoryPlaceholderCreateInfo)
-			.ToDisposableArray();
-
-		var placeholderCreateInfos = filePlaceholderCreateInfos.Source
-			.Concat(directoryPlaceholderCreateInfos.Source)
-			.Select((x) => (CldApi.CF_PLACEHOLDER_CREATE_INFO)x)
-			.ToArray();
-
-		if (placeholderCreateInfos.Length == 0) {
-			return;
+			.ToDisposableArray()
+		) {
+			// Create one at a time; prone to errors when done with list
+			foreach (var createInfo in safeFilePlaceholderCreateInfos.Source) {
+				CldApi.CfCreatePlaceholders(
+					Path.Join(rootDirectory, subpath),
+					[createInfo],
+					1,
+					CldApi.CF_CREATE_FLAGS.CF_CREATE_FLAG_NONE,
+					out var fileEntriesProcessed
+				).ThrowIfFailed($"Create file placeholder failed");
+			}
 		}
 
-		CldApi.CfCreatePlaceholders(
-			Path.Join(rootDirectory, subpath),
-			placeholderCreateInfos,
-			Convert.ToUInt32(placeholderCreateInfos.Length),
-			CldApi.CF_CREATE_FLAGS.CF_CREATE_FLAG_NONE,
-			out var entriesProcessed
-		).ThrowIfFailed("Create placeholders failed");
+		var remoteSubDirectories = remoteService.EnumerateDirectories(subpath);
+		using (var safeDirectoryPlaceholderCreateInfos = remoteSubDirectories
+			.Select(GetDirectoryPlaceholderCreateInfo)
+			.ToDisposableArray()
+		) {
+			// Create one at a time; prone to errors when done with list
+			foreach (var createInfo in safeDirectoryPlaceholderCreateInfos.Source) {
+				CldApi.CfCreatePlaceholders(
+					Path.Join(rootDirectory, subpath),
+					[createInfo],
+					1,
+					CldApi.CF_CREATE_FLAGS.CF_CREATE_FLAG_NONE,
+					out var directoryEntriesProcessed
+				).ThrowIfFailed("Create directory placeholders failed");
+			}
+		}
 
 		foreach (var remoteSubDirectory in remoteSubDirectories) {
 			CreateBulk(remoteSubDirectory.RelativePath);

@@ -11,6 +11,7 @@ public class ClientWatcher : IDisposable {
 	private readonly ChannelWriter<Func<Task>> _taskWriter;
 	private readonly FileLocker _fileLocker;
 	private readonly IRemoteReadWriteService _remoteService;
+	private readonly PlaceholdersService _placeholdersService;
 	private readonly ILogger _logger;
 	private readonly FileSystemWatcher _watcher;
 
@@ -21,12 +22,14 @@ public class ClientWatcher : IDisposable {
 		ChannelWriter<Func<Task>> taskWriter,
 		FileLocker fileLocker,
 		IRemoteReadWriteService remoteService,
+		PlaceholdersService placeholdersService,
 		ILogger<ClientWatcher> logger
 	) {
 		_contextAccessor = contextAccessor;
 		_taskWriter = taskWriter;
 		_fileLocker = fileLocker;
 		_remoteService = remoteService;
+		_placeholdersService = placeholdersService;
 		_logger = logger;
 		_watcher = CreateWatcher();
 	}
@@ -38,6 +41,7 @@ public class ClientWatcher : IDisposable {
 				| NotifyFilters.DirectoryName
 				| NotifyFilters.Attributes
 				| NotifyFilters.LastWrite,
+			InternalBufferSize = 64 * 1024,
 		};
 
 		watcher.Changed += async (object sender, FileSystemEventArgs e) => {
@@ -45,19 +49,33 @@ public class ClientWatcher : IDisposable {
 				return;
 			}
 			var fileInfo = new FileInfo(e.FullPath);
-			if (fileInfo.Attributes.HasFlag(FileAttributes.Directory)) {
-				return;
-			}
 			_logger.LogDebug("{changeType} {path}", e.ChangeType, e.FullPath);
 			await _taskWriter.WriteAsync(async () => {
 				var relativePath = PathMapper.GetRelativePath(e.FullPath, _rootDirectory);
 				try {
 					if (fileInfo.Attributes.HasAllSyncFlags(SyncAttributes.PINNED | (int)FileAttributes.Offline)) {
-						CloudFilter.HydratePlaceholder(e.FullPath);
+						if (fileInfo.Attributes.HasFlag(FileAttributes.Directory)) {
+							_placeholdersService.CreateBulk(relativePath);
+							var childItems = Directory.EnumerateFiles(e.FullPath, "*", SearchOption.AllDirectories)
+								.Where((x) => !FileHelper.IsSystemFile(x))
+								.ToArray();
+							foreach (var childItem in childItems) {
+								try {
+									CloudFilter.HydratePlaceholder(childItem);
+								}
+								catch (Exception ex) {
+									_logger.LogError(ex, "Hydate file failed: {filePath}", childItem);
+								}
+							}
+						}
+						else {
+							CloudFilter.HydratePlaceholder(e.FullPath);
+						}
 					}
 					else if (
 						fileInfo.Attributes.HasAnySyncFlag(SyncAttributes.UNPINNED)
 						&& !fileInfo.Attributes.HasFlag(FileAttributes.Offline)
+						&& !fileInfo.Attributes.HasFlag(FileAttributes.Directory)
 					) {
 						CloudFilter.DehydratePlaceholder(e.FullPath, relativePath, fileInfo.Length);
 					}
