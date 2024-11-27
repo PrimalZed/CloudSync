@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PrimalZed.CloudSync;
@@ -10,8 +9,25 @@ using PrimalZed.CloudSync.Remote.Local;
 using PrimalZed.CloudSync.Remote.Sftp;
 using PrimalZed.CloudSync.Shell;
 using PrimalZed.CloudSync.Shell.DependencyInjection;
+using Serilog;
 
 var builder = Host.CreateApplicationBuilder(args);
+builder.Logging.AddSerilog(
+	new LoggerConfiguration()
+		.MinimumLevel.Information()
+		.MinimumLevel.Override("PrimalZed", Serilog.Events.LogEventLevel.Debug)
+		.WriteTo.Async(a =>
+			a.File(
+				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PrimalZed", "CloudSync", "log.txt"),
+				fileSizeLimitBytes: 10 * 1048576L, // 10 MB
+				rollOnFileSizeLimit: true,
+				retainedFileCountLimit: 10,
+				retainedFileTimeLimit: TimeSpan.FromDays(7)
+			)
+		)
+		.CreateLogger(),
+	true
+);
 
 builder.Services
 	.AddLocalRemoteServices()
