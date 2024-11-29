@@ -17,7 +17,7 @@
   <Identity
     Name="com.primalzed.cloudsync"
     Publisher="CN=PrimalZed"
-    Version="1.0.1.0" />
+    Version="1.0.2.0" />
 
   <Properties>
     <DisplayName>Cloud Sync</DisplayName>

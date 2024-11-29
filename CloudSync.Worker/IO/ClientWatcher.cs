@@ -96,6 +96,9 @@ public class ClientWatcher : IDisposable {
 		};
 
 		watcher.Created += async (object sender, FileSystemEventArgs e) => {
+			if (FileHelper.IsSystemFile(e.FullPath)) {
+				return;
+			}
 			_logger.LogDebug("Created {path}", e.FullPath);
 			await _taskWriter.WriteAsync(async () => {
 				var relativePath = PathMapper.GetRelativePath(e.FullPath, _rootDirectory);
@@ -104,6 +107,19 @@ public class ClientWatcher : IDisposable {
 				if (File.GetAttributes(e.FullPath).HasFlag(FileAttributes.Directory)) {
 					var directoryInfo = new DirectoryInfo(e.FullPath);
 					await _remoteService.CreateDirectory(directoryInfo, relativePath);
+
+					var childItems = Directory.EnumerateFiles(e.FullPath, "*", SearchOption.AllDirectories)
+						.Where((x) => !FileHelper.IsSystemFile(x))
+						.ToArray();
+					foreach (var childItem in childItems) {
+						try {
+							var fileInfo = new FileInfo(childItem);
+							await _remoteService.CreateFile(fileInfo, childItem);
+						}
+						catch (Exception ex) {
+							_logger.LogError(ex, "Create file failed: {filePath}", childItem);
+						}
+					}
 				}
 				else {
 					var fileInfo = new FileInfo(e.FullPath);
